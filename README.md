@@ -1,6 +1,10 @@
 # OmniFocus MCP Server
 
-A Model Context Protocol (MCP) server that integrates with OmniFocus to enable Claude to interact with your tasks and projects.
+A Model Context Protocol (MCP) server that integrates with OmniFocus to enable Claude to interact with your tasks and projects. 
+
+## Status
+
+This is a work in progress. It is not yet ready for serious use. 
 
 ## Quick Start
 
