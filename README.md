@@ -42,31 +42,7 @@ Returns a JSON object with the following properties:
 
 ## Installation
 
-1. Clone this repository
-2. Install dependencies:
-
-```bash
-npm install
-```
-
-3. Build the project:
-
-```bash
-npm run build
-```
-
-
-
-## Running the Server
-
-Start the MCP server:
-
-```bash
-npm start
-```
-
-The server will run on http://localhost:3000 by default. You can change the port by setting the PORT environment variable.
-
+Documentation to follow.
 
 
 # Relevant Omnifocus API Docs
