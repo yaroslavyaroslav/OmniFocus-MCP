@@ -11,6 +11,33 @@ This is a work in progress. It is not yet ready for serious use.
 ## Overview
 
 ## Features
+### Tasks
+
+#### addTask
+
+Add a new task to OmniFocus.
+
+Accepts a JSON object with the following properties:
+
+- `name`: The name of the task.
+- `projectName`: The name of the project to add the task to.
+- `note`: The note to add to the task.
+- `dueDate`: The due date to add to the task.
+- `deferDate`: The defer date to add to the task.
+- `flagged`: Whether the task should be flagged.
+- `estimatedMinutes`: The estimated minutes to add to the task.
+- `tags`: The tags to add to the task.
+
+Returns a JSON object with the following properties:
+
+- `success`: Whether the task was added successfully.
+- `taskId`: The ID of the task.
+
+
+
+
+
+
 
 
 ## Installation
