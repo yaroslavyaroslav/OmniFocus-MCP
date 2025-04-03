@@ -9,7 +9,7 @@ A Model Context Protocol (MCP) server that integrates with OmniFocus to enable C
 ### Roadmap
 
 - Explore the possibility of serving omnifocus data to the mcp as a resource. 
--  Add a tool for adding projects to omnifocus.
+- ✅ Add a tool for adding projects to omnifocus.
 - Add a tool for removing tasks 
 - Add a tool for marking tasks as complete
 - Add a tool for editing any of the task fields
@@ -26,7 +26,7 @@ A Model Context Protocol (MCP) server that integrates with OmniFocus to enable C
 
 ### Tasks
 
-#### addTask
+#### add_omnifocus_task
 
 Add a new task to OmniFocus.
 
@@ -45,6 +45,30 @@ Returns a JSON object with the following properties:
 
 - `success`: Whether the task was added successfully.
 - `taskId`: The ID of the task.
+```
+
+### Projects
+
+#### add_project
+
+Add a new project to OmniFocus.
+
+Accepts a JSON object with the following properties:
+```
+- `name`: The name of the project.
+- `folderName`: The name of the folder to add the project to.
+- `note`: The note to add to the project.
+- `dueDate`: The due date to add to the project.
+- `deferDate`: The defer date to add to the project.
+- `flagged`: Whether the project should be flagged.
+- `estimatedMinutes`: The estimated minutes to add to the project.
+- `tags`: The tags to add to the project.
+- `sequential`: Whether tasks in the project should be sequential (default: false).
+
+Returns a JSON object with the following properties:
+
+- `success`: Whether the project was added successfully.
+- `projectId`: The ID of the project.
 ```
 
 ## Installation

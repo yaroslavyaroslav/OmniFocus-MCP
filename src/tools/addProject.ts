@@ -2,8 +2,8 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 const execAsync = promisify(exec);
 
-// Interface for task creation parameters
-export interface AddTaskParams {
+// Interface for project creation parameters
+export interface AddProjectParams {
   name: string;
   note?: string;
   dueDate?: string; // ISO date string
@@ -11,13 +11,14 @@ export interface AddTaskParams {
   flagged?: boolean;
   estimatedMinutes?: number;
   tags?: string[]; // Tag names
-  projectName?: string; // Project name to add task to
+  folderName?: string; // Folder name to add project to
+  sequential?: boolean; // Whether tasks should be sequential or parallel
 }
 
 /**
- * Generate pure AppleScript for task creation
+ * Generate pure AppleScript for project creation
  */
-function generateAppleScript(params: AddTaskParams): string {
+function generateAppleScript(params: AddProjectParams): string {
   // Sanitize and prepare parameters for AppleScript
   const name = params.name.replace(/['"\\]/g, '\\$&'); // Escape quotes and backslashes
   const note = params.note?.replace(/['"\\]/g, '\\$&') || '';
@@ -26,40 +27,42 @@ function generateAppleScript(params: AddTaskParams): string {
   const flagged = params.flagged === true;
   const estimatedMinutes = params.estimatedMinutes?.toString() || '';
   const tags = params.tags || [];
-  const projectName = params.projectName?.replace(/['"\\]/g, '\\$&') || '';
+  const folderName = params.folderName?.replace(/['"\\]/g, '\\$&') || '';
+  const sequential = params.sequential === true;
   
   // Construct AppleScript with error handling
   let script = `
   try
     tell application "OmniFocus"
       tell front document
-        -- Determine the container (inbox or project)
-        if "${projectName}" is "" then
-          -- Use inbox of the document
-          set newTask to make new inbox task with properties {name:"${name}"}
+        -- Determine the container (root or folder)
+        if "${folderName}" is "" then
+          -- Create project at the root level
+          set newProject to make new project with properties {name:"${name}"}
         else
-          -- Use specified project
+          -- Use specified folder
           try
-            set theProject to first flattened project where name = "${projectName}"
-            set newTask to make new task with properties {name:"${name}"} at end of tasks of theProject
+            set theFolder to first flattened folder where name = "${folderName}"
+            set newProject to make new project with properties {name:"${name}"} at end of projects of theFolder
           on error
-            return "{\\\"success\\\":false,\\\"error\\\":\\\"Project not found: ${projectName}\\\"}"
+            return "{\\\"success\\\":false,\\\"error\\\":\\\"Folder not found: ${folderName}\\\"}"
           end try
         end if
         
-        -- Set task properties
-        ${note ? `set note of newTask to "${note}"` : ''}
+        -- Set project properties
+        ${note ? `set note of newProject to "${note}"` : ''}
         ${dueDate ? `
-          set due date of newTask to (current date) + (time to GMT)
-          set due date of newTask to date "${dueDate}"` : ''}
+          set due date of newProject to (current date) + (time to GMT)
+          set due date of newProject to date "${dueDate}"` : ''}
         ${deferDate ? `
-          set defer date of newTask to (current date) + (time to GMT)
-          set defer date of newTask to date "${deferDate}"` : ''}
-        ${flagged ? `set flagged of newTask to true` : ''}
-        ${estimatedMinutes ? `set estimated minutes of newTask to ${estimatedMinutes}` : ''}
+          set defer date of newProject to (current date) + (time to GMT)
+          set defer date of newProject to date "${deferDate}"` : ''}
+        ${flagged ? `set flagged of newProject to true` : ''}
+        ${estimatedMinutes ? `set estimated minutes of newProject to ${estimatedMinutes}` : ''}
+        ${`set sequential of newProject to ${sequential}`}
         
-        -- Get the task ID
-        set taskId to id of newTask as string
+        -- Get the project ID
+        set projectId to id of newProject as string
         
         -- Add tags if provided
         ${tags.length > 0 ? tags.map(tag => {
@@ -67,14 +70,14 @@ function generateAppleScript(params: AddTaskParams): string {
           return `
           try
             set theTag to first flattened tag where name = "${sanitizedTag}"
-            tell newTask to add theTag
+            tell newProject to add theTag
           on error
             -- Ignore errors finding/adding tags
           end try`;
         }).join('\n') : ''}
         
-        -- Return success with task ID
-        return "{\\\"success\\\":true,\\\"taskId\\\":\\"" & taskId & "\\",\\\"name\\\":\\"${name}\\"}"
+        -- Return success with project ID
+        return "{\\\"success\\\":true,\\\"projectId\\\":\\"" & projectId & "\\",\\\"name\\\":\\"${name}\\"}"
       end tell
     end tell
   on error errorMessage
@@ -86,9 +89,9 @@ function generateAppleScript(params: AddTaskParams): string {
 }
 
 /**
- * Add a task to OmniFocus
+ * Add a project to OmniFocus
  */
-export async function addTask(params: AddTaskParams): Promise<{success: boolean, taskId?: string, error?: string}> {
+export async function addProject(params: AddProjectParams): Promise<{success: boolean, projectId?: string, error?: string}> {
   try {
     // Generate AppleScript
     const script = generateAppleScript(params);
@@ -111,7 +114,7 @@ export async function addTask(params: AddTaskParams): Promise<{success: boolean,
       // Return the result
       return {
         success: result.success,
-        taskId: result.taskId,
+        projectId: result.projectId,
         error: result.error
       };
     } catch (parseError) {
@@ -122,10 +125,10 @@ export async function addTask(params: AddTaskParams): Promise<{success: boolean,
       };
     }
   } catch (error: any) {
-    console.error("Error in addTask:", error);
+    console.error("Error in addProject:", error);
     return {
       success: false,
-      error: error?.message || "Unknown error in addTask"
+      error: error?.message || "Unknown error in addProject"
     };
   }
-}
+} 
