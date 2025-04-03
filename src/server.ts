@@ -28,8 +28,8 @@ server.tool(
       // Format and return the tasks
       let responseText = "Found " + tasks.length + " tasks:\n\n";
       
-      var displayCount = Math.min(tasks.length, 20);
-      for (var i = 0; i < displayCount; i++) {
+      // Display all tasks instead of just the first 20
+      for (var i = 0; i < tasks.length; i++) {
         const task = tasks[i];
         const taskName = task.name || "[No Name]";
         const dueDateStr = task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'No due date';
@@ -41,10 +41,6 @@ server.tool(
           responseText += "   Note: " + task.note + "\n";
         }
         responseText += '\n';
-      }
-      
-      if (tasks.length > 20) {
-        responseText += "... and " + (tasks.length - 20) + " more tasks";
       }
       
       if (tasks.length === 0) {
