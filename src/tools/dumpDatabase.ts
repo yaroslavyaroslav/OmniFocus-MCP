@@ -142,6 +142,62 @@ const generateDumpScript = () => `
           try { taskValues.push(task.completedByChildren() ? "true" : "false"); } 
           catch (e) { taskValues.push("false"); }
           
+          // Repetition Rule information
+          try { 
+            var repetitionRule = task.repetitionRule();
+            if (repetitionRule) {
+              // Is Repeating
+              taskValues.push("true");
+              
+              // Get repetition method
+              try {
+                var method = repetitionRule.method();
+                taskValues.push(method || ""); 
+              } catch (e) { taskValues.push(""); }
+              
+              // Format repetition as human-readable string
+              try {
+                var ruleString = "";
+                
+                // Check for interval
+                try {
+                  var interval = repetitionRule.interval();
+                  if (interval) {
+                    ruleString += "Every ";
+                    if (interval.days) ruleString += interval.days + " days ";
+                    if (interval.weeks) ruleString += interval.weeks + " weeks ";
+                    if (interval.months) ruleString += interval.months + " months ";
+                    if (interval.years) ruleString += interval.years + " years ";
+                  }
+                } catch (e) {}
+                
+                // Check for fixed schedule
+                try {
+                  var weekDays = repetitionRule.weekDays();
+                  if (weekDays && weekDays.length > 0) {
+                    ruleString += "on ";
+                    for (var d = 0; d < weekDays.length; d++) {
+                      ruleString += weekDays[d] + (d < weekDays.length - 1 ? ", " : " ");
+                    }
+                  }
+                } catch (e) {}
+                
+                taskValues.push(ruleString.trim());
+              } catch (e) { taskValues.push(""); }
+              
+            } else {
+              // Not repeating
+              taskValues.push("false");
+              taskValues.push(""); // No method
+              taskValues.push(""); // No rule string
+            }
+          } catch (e) { 
+            // No repetition
+            taskValues.push("false");
+            taskValues.push(""); // No method
+            taskValues.push(""); // No rule string
+          }
+          
           // Add this task's values to our array
           taskArrays.push(taskValues);
           taskCount++;
@@ -186,6 +242,9 @@ const processRawTaskData = (rawTaskData: any[]): OmnifocusTask[] => {
     hasChildren: taskValues[17] === "true",
     sequential: taskValues[18] === "true",
     completedByChildren: taskValues[19] === "true",
+    isRepeating: taskValues[20] === "true",
+    repetitionMethod: taskValues[21] || null,
+    repetitionRule: taskValues[22] || null,
     attachments: [], // Default empty array
     linkedFileURLs: [], // Default empty array
     notifications: [], // Default empty array

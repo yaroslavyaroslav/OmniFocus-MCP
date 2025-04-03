@@ -35,11 +35,23 @@ server.tool(
         const dueDateStr = task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'No due date';
         const dueString = "Due: " + dueDateStr;
         const flaggedString = task.flagged ? '⭐' : '';
+        const repeatingString = task.isRepeating ? '🔄' : '';
         
-        responseText += (i+1) + ". " + flaggedString + " " + taskName + " (" + dueString + ")\n";
+        responseText += (i+1) + ". " + flaggedString + repeatingString + " " + taskName + " (" + dueString + ")\n";
+        
         if (task.note && task.note.trim() !== '') {
           responseText += "   Note: " + task.note + "\n";
         }
+        
+        // Add repetition information if task is repeating
+        if (task.isRepeating && task.repetitionRule) {
+          let repetitionInfo = "   Repeats: " + task.repetitionRule;
+          if (task.repetitionMethod) {
+            repetitionInfo += " (" + task.repetitionMethod + " repetition)";
+          }
+          responseText += repetitionInfo + "\n";
+        }
+        
         responseText += '\n';
       }
       

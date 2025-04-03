@@ -1,4 +1,3 @@
-
 export interface OmnifocusTask {
     id: string;
     name: string;
@@ -28,6 +27,11 @@ export interface OmnifocusTask {
     hasChildren: boolean;
     sequential: boolean;
     completedByChildren: boolean;
+    
+    // Recurring task information
+    repetitionRule: string | null; // Textual representation of repetition rule
+    isRepeating: boolean;
+    repetitionMethod: string | null; // Fixed or due-based repetition
     
     // Attachments
     attachments: any[]; // FileWrapper representations
