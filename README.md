@@ -1,16 +1,29 @@
 # OmniFocus MCP Server
 
-A Model Context Protocol (MCP) server that integrates with OmniFocus to enable Claude to interact with your tasks and projects. 
+A Model Context Protocol (MCP) server that integrates with OmniFocus to enable Claude (or other models) to interact with your tasks and projects. 
+
 
 ## Status
+> ⚠️ **Warning**: This is a work in progress. It is not yet ready for serious use.
 
-This is a work in progress. It is not yet ready for serious use. 
+### Roadmap
+
+- Explore the possibility of serving omnifocus data to the mcp as a resource. 
+-  Add a tool for adding projects to omnifocus.
+- Add a tool for removing tasks 
+- Add a tool for marking tasks as complete
+- Add a tool for editing any of the task fields
+- Add a tool for removing projects
+- Add a tool for editing any of the project fields
+- Explore the posibiility of interacting with custom perspectives
+
 
 ## Quick Start
 
 ## Overview
 
 ## Features
+
 ### Tasks
 
 #### addTask
@@ -18,7 +31,7 @@ This is a work in progress. It is not yet ready for serious use.
 Add a new task to OmniFocus.
 
 Accepts a JSON object with the following properties:
-
+```
 - `name`: The name of the task.
 - `projectName`: The name of the project to add the task to.
 - `note`: The note to add to the task.
@@ -32,13 +45,7 @@ Returns a JSON object with the following properties:
 
 - `success`: Whether the task was added successfully.
 - `taskId`: The ID of the task.
-
-
-
-
-
-
-
+```
 
 ## Installation
 
