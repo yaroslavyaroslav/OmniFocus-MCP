@@ -5,7 +5,8 @@
   "type": "module",
   "main": "dist/server.js",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && npm run copy-files",
+    "copy-files": "mkdir -p dist/utils/omnifocusScripts && cp src/utils/omnifocusScripts/*.js dist/utils/omnifocusScripts/",
     "start": "node dist/server.js",
     "dev": "tsc -w"
   },

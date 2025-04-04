@@ -3,13 +3,61 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import { z } from 'zod';
+import { createServer, IncomingMessage, ServerResponse } from 'http';
+import { parse as parseUrl } from 'url';
 
 import { dumpDatabase } from './tools/dumpDatabase.js';
-import { addOmniFocusTask, AddOmniFocusTaskParams } from './tools/addOmniFocusTask.js';
-import { addProject, AddProjectParams } from './tools/addProject.js';
+import { addOmniFocusTask, AddOmniFocusTaskParams } from './tools/primitives/addOmniFocusTask.js';
+import { addProject, AddProjectParams } from './tools/primitives/addProject.js';
 const execAsync = promisify(exec);
 
+// Define a type for OmniFocus data
+interface OmniFocusData {
+  exportDate: string;
+  tasks: any[];
+  projects?: Record<string, any>;
+  folders?: Record<string, any>;
+  tags?: Record<string, any>;
+}
 
+// Global variable to store the latest OmniFocus data
+let latestOmniFocusData: OmniFocusData | null = null;
+
+// Create an HTTP server to receive data from OmniFocus
+const httpServer = createServer((req: IncomingMessage, res: ServerResponse) => {
+  const url = req.url ? parseUrl(req.url, true) : { pathname: null };
+  
+  // Handle requests to /data endpoint
+  if (url.pathname === '/data' && req.method === 'POST') {
+    let body = '';
+    
+    req.on('data', chunk => {
+      body += chunk.toString();
+    });
+    
+    req.on('end', () => {
+      try {
+        console.log('Received data from OmniFocus');
+        latestOmniFocusData = JSON.parse(body);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true }));
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        console.error('Error processing OmniFocus data:', errorMessage);
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: errorMessage }));
+      }
+    });
+  } else {
+    res.writeHead(404, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: 'Not found' }));
+  }
+});
+
+// Start the HTTP server on port 9999
+httpServer.listen(9999, () => {
+  console.error('HTTP server listening on port 9999 for OmniFocus data');
+});
 
 // Create an MCP server
 const server = new McpServer({
@@ -212,7 +260,10 @@ server.tool(
   }
 );
 
-
+// Make the latestOmniFocusData available to other modules
+export function getLatestOmniFocusData(): OmniFocusData | null {
+  return latestOmniFocusData;
+}
 
 // Start the MCP server
 const transport = new StdioServerTransport();
