@@ -1,7 +1,6 @@
 // OmniJS script to export active tasks from OmniFocus database - Optimized
 (() => {
     try {
-      console.log("Starting optimized database export...");
       const startTime = new Date();
       
       // Helper function to format dates consistently or return null
@@ -47,8 +46,6 @@
         tags: new Map()
       };
   
-      console.log("Gathering active projects, folders, and tags in a single pass...");
-      
       // Filter active projects first to avoid unnecessary processing
       const activeProjects = flattenedProjects.filter(project => 
         project.status !== Project.Status.Done && 
@@ -88,7 +85,7 @@
             tasks: [] // Will be populated in the task loop
           });
         } catch (projectError) {
-          console.error(`Error processing project ${project.name}: ${projectError}`);
+          // Silently handle project processing errors
         }
       });
   
@@ -104,7 +101,7 @@
             subfolders: []
           });
         } catch (folderError) {
-          console.error(`Error processing folder ${folder.name}: ${folderError}`);
+          // Silently handle folder processing errors
         }
       });
   
@@ -120,7 +117,7 @@
             tasks: []
           });
         } catch (tagError) {
-          console.error(`Error processing tag ${tag.name}: ${tagError}`);
+          // Silently handle tag processing errors
         }
       });
   
@@ -195,12 +192,11 @@
               }
             });
           } catch (taskError) {
-            console.error(`Error processing task ${task.name}: ${taskError}`);
+            // Silently handle task processing errors
           }
         });
         
         // Log batch progress
-        console.log(`Processed batch ${i/BATCH_SIZE + 1} of ${Math.ceil(activeTasks.length/BATCH_SIZE)}`);
       }
   
       // Convert Maps back to regular objects for JSON output
@@ -213,8 +209,6 @@
       };
   
       const endTime = new Date();
-      const elapsedTime = (endTime - startTime)/1000;
-      console.log(`Export complete in ${elapsedTime} seconds`);
       
       // Send the data to our local server using URL.FetchRequest
       try {
@@ -230,16 +224,10 @@
         request.bodyString = jsonData;
         
         // Make the request
-        console.log("Sending data to MCP server...");
         request.fetch().then(response => {
-          console.log(`Server response status: ${response.statusCode}`);
-          if (response.statusCode === 200) {
-            console.log("Data successfully sent to MCP server");
-          } else {
-            console.error("Failed to send data to MCP server:", response.statusCode);
-          }
+          // Process response silently
         }).catch(error => {
-          console.error("Error sending data to MCP server:", error);
+          // Handle error silently
         });
         
         // Create a simplified export just with the tasks for easier return
@@ -249,13 +237,17 @@
         };
         
         // Return a success message with the task count
-        return `Found ${finalExport.tasks.length} tasks and sent data to MCP server`;
+        return finalExport.tasks
       } catch (error) {
-        console.error(`Error sending data: ${error}`);
-        return `Error: ${error}`;
+        return JSON.stringify({
+          success: false,
+          error: `Error sending data: ${error}`
+        });
       }
     } catch (error) {
-      console.error(`Export failed: ${error}`);
-      return `Error exporting database: ${error}`;
+      return JSON.stringify({
+        success: false,
+        error: `Error exporting database: ${error}`
+      });
     }
   })();

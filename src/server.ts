@@ -123,6 +123,7 @@ server.tool(
   async () => {
     try {
       const tasks = await dumpDatabase();
+      
 
       // Format and return the tasks
       let responseText = "Found " + tasks.length + " tasks:\n\n";
@@ -155,7 +156,11 @@ server.tool(
       }
       
       if (tasks.length === 0) {
-          responseText = "Found 0 tasks. Check server logs for any errors.";
+          responseText = "No tasks found. This could be because:\n" + 
+                         "1. OmniFocus is not running\n" +
+                         "2. The script failed to execute properly\n" + 
+                         "3. There are no tasks in your OmniFocus database\n" +
+                         "Please check the server logs for more information.";
       }
 
       return {
@@ -165,12 +170,10 @@ server.tool(
         }]
       };
     } catch (err: unknown) {
-      const error = err as Error;
-      console.error(`Tool execution error: ${error.message}`); 
       return {
         content: [{
           type: "text",
-          text: `Error listing tasks: ${error.message}`
+          text: `Error listing tasks. Please ensure OmniFocus is running and try again.`
         }],
         isError: true
       };

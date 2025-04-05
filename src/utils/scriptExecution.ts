@@ -12,41 +12,34 @@ const execAsync = promisify(exec);
 // Helper function to execute OmniFocus scripts
 export async function executeJXA(script: string): Promise<any[]> {
   try {
-    console.error("Starting executeJXA...");
-    
-    // Log the beginning of the script to verify its content
-    console.error("Writing script (first ~300 chars):\n", script.substring(0, 300));
-
     // Write the script to a temporary file in the system temp directory
     const tempFile = join(tmpdir(), `jxa_script_${Date.now()}.js`);
-    console.error(`Writing script to temporary file: ${tempFile}`);
     
     // Write the script to the temporary file
     writeFileSync(tempFile, script);
-    console.error("Successfully wrote script to temp file");
     
     // Execute the script using osascript
-    console.error("Executing script with osascript...");
     const { stdout, stderr } = await execAsync(`osascript -l JavaScript ${tempFile}`);
     
     if (stderr) {
       console.error("Script stderr output:", stderr);
     }
     
-    console.error("Script stdout:", stdout);
-    
     // Clean up the temporary file
     unlinkSync(tempFile);
-    console.error("Cleaned up temporary file");
     
     // Parse the output as JSON
     try {
       const result = JSON.parse(stdout);
-      console.error(`Successfully parsed JSON. Found ${result.length} tasks`);
       return result;
     } catch (e) {
       console.error("Failed to parse script output as JSON:", e);
-      console.error("Raw output was:", stdout);
+      
+      // If this contains a "Found X tasks" message, treat it as a successful non-JSON response
+      if (stdout.includes("Found") && stdout.includes("tasks")) {
+        return [];
+      }
+      
       return [];
     }
   } catch (error) {
@@ -58,8 +51,6 @@ export async function executeJXA(script: string): Promise<any[]> {
 // Function to execute scripts in OmniFocus using the URL scheme
 export async function executeOmniFocusScript(scriptPath: string, args?: any): Promise<any> {
   try {
-    console.error(`Executing OmniFocus script from file: ${scriptPath}`);
-    
     // Handle file path with @ prefix - use relative path from current executing code
     let actualPath;
     if (scriptPath.startsWith('@')) {
@@ -76,14 +67,11 @@ export async function executeOmniFocusScript(scriptPath: string, args?: any): Pr
       // Check if the script exists in the dist path
       if (existsSync(distPath)) {
         actualPath = distPath;
-        console.error(`Found script at: ${actualPath}`);
       } else if (existsSync(srcPath)) {
         actualPath = srcPath;
-        console.error(`Found script at: ${actualPath}`);
       } else {
         // Try the old path as a fallback
         actualPath = join(__dirname, '..', 'omnifocusScripts', scriptName);
-        console.error(`Looking for script at: ${actualPath}`);
       }
     } else {
       actualPath = scriptPath;
@@ -91,7 +79,6 @@ export async function executeOmniFocusScript(scriptPath: string, args?: any): Pr
     
     // Read the script file
     const scriptContent = readFileSync(actualPath, 'utf8');
-    console.error("Successfully read script file");
     
     // Encode the script and arguments
     const encodedScript = encodeURIComponent(scriptContent);
@@ -99,7 +86,6 @@ export async function executeOmniFocusScript(scriptPath: string, args?: any): Pr
     
     // Construct the URL
     const url = `omnifocus://localhost/omnijs-run?script=${encodedScript}${encodedArgs}`;
-    console.error("Generated OmniFocus URL (truncated):", url + '...');
     
     // Open the URL using the 'open' command on macOS
     const { stdout, stderr } = await execAsync(`open "${url}"`);
@@ -108,8 +94,8 @@ export async function executeOmniFocusScript(scriptPath: string, args?: any): Pr
       console.error("Error opening OmniFocus URL:", stderr);
     }
     
-    console.error("OmniFocus script execution complete");
-    return stdout.trim();
+  
+    return stdout;
   } catch (error) {
     console.error("Failed to execute OmniFocus script:", error);
     throw error;
