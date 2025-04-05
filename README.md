@@ -1,5 +1,4 @@
 # OmniFocus MCP Server
-NOTE: currently working through NPM issues. For now, building and manually installing works. 
 
 A Model Context Protocol (MCP) server that integrates with OmniFocus to enable Claude (or other MCP-compatible AI assistants) to interact with your tasks and projects.
 
