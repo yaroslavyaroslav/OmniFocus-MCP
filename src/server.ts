@@ -1,7 +1,5 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { exec } from 'child_process';
-import { promisify } from 'util';
 import { z } from 'zod';
 
 
@@ -10,16 +8,8 @@ import { addOmniFocusTask, AddOmniFocusTaskParams } from './tools/primitives/add
 import { addProject, AddProjectParams } from './tools/primitives/addProject.js';
 import { removeItem, RemoveItemParams } from './tools/primitives/removeItem.js';
 import { editItem, EditItemParams } from './tools/primitives/editItem.js';
-const execAsync = promisify(exec);
 
-// Define a type for OmniFocus data
-interface OmniFocusData {
-  exportDate: string;
-  tasks: any[];
-  projects?: Record<string, any>;
-  folders?: Record<string, any>;
-  tags?: Record<string, any>;
-}
+
 
 // Create an MCP server
 const server = new McpServer({

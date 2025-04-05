@@ -3,21 +3,21 @@
 A Model Context Protocol (MCP) server that integrates with OmniFocus to enable Claude (or other models) to interact with your tasks and projects. 
 
 
+
 ## Status
-> ⚠️ **Warning**: This is a work in progress. It is not yet ready for serious use.
+> ⚠️ **Warning**: This is a work in progress. 
 
 ### Roadmap to v1.0
 
 - ✅ Added Tool for dumping the omnifocus database into model context. 
 - ✅ Add a tool for adding projects to omnifocus.
 - ✅ Add a tool for removing tasks or projects
-- Add a tool for editing any of the task or project fields (including marking as complete)
+- ✅ Add a tool for editing any of the task or project fields (including marking as complete)
 - Explore the posibiility of interacting with custom perspectives
 - Write documentation and examples
 
 
 ## Quick Start
-
 
 ## Overview
 
@@ -94,7 +94,7 @@ Returns a JSON object with the following properties:
 - `projectId`: The ID of the project.
 ```
 
-## Installation
+## Development
 
 Documentation to follow.
 
