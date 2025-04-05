@@ -1,6 +1,6 @@
 import { OmnifocusTask } from '../types.js';
 import { executeOmniFocusScript } from '../utils/scriptExecution.js';
-import { getLatestOmniFocusData } from '../server.js';
+
 import fs from 'fs';
 // Define an interface for the task object returned by omnifocusDump.js
 interface OmnifocusDumpTask {
@@ -23,41 +23,22 @@ interface OmnifocusDumpTask {
   inInbox: boolean;
 }
 
+// Interface for the data returned from the script
+interface OmnifocusDumpData {
+  exportDate: string;
+  tasks: OmnifocusDumpTask[];
+}
+
 // Main function to dump the database
 export async function dumpDatabase(): Promise<OmnifocusTask[]> {
   
   try {
     // Execute the OmniFocus script - this will trigger a fetch that will update latestOmniFocusData
-    const scriptResult = await executeOmniFocusScript('@omnifocusDump.js');
-    
-    // Wait longer for the HTTP POST to be processed
-    let attempts = 0;
-    const maxAttempts = 10;
-    const waitTime = 1000; // 1 second between attempts
-    
-    let data = null;
-    
-    // Try multiple times to get the data
-    while (attempts < maxAttempts) {
-      attempts++;
-      
-      // Wait before checking
-      // await new Promise(resolve => setTimeout(resolve, waitTime));
-      // get the script result
-      const scriptResult = await executeOmniFocusScript('@omnifocusDump.js');
-      // data = scriptResult;
-      // console.log("scriptResult");
-      // console.log(data);
-      //save the contents of scriptResult to a file in the library/logs/claude folder
-      // fs.writeFileSync('~/library/logs/claude/scriptResult.json', scriptResult);
-      // Get the latest data from the server module
-      data = getLatestOmniFocusData();
-      
-      if (data && data.tasks && data.tasks.length > 0) {
-        break;
-      }
-    }
-    
+    const data = await executeOmniFocusScript('@omnifocusDump.js') as OmnifocusDumpData;
+    // wait 1 second
+    await new Promise(resolve => setTimeout(resolve, 1000));
+ 
+    // Remove unnecessary break statement and empty check
     if (!data) {
       return [];
     }
@@ -95,12 +76,12 @@ export async function dumpDatabase(): Promise<OmnifocusTask[]> {
         shouldUseFloatingTimeZone: false // Default value
       }));
     } else {
+      console.error("No tasks found in the data or data structure is unexpected:", data);
       return [];
     }
   } catch (error) {
     console.error("Error in dumpDatabase:", error);
     throw error;
   }
-  return [];
 }
 

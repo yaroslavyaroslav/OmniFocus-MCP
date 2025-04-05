@@ -87,17 +87,25 @@ export async function executeOmniFocusScript(scriptPath: string, args?: any): Pr
     // Construct the URL
     const url = `omnifocus://localhost/omnijs-run?script=${encodedScript}${encodedArgs}`;
     
-    // Open the URL using the 'open' command on macOS
+    // Open the URL using the 'open' command on macOS and get the output
     const { stdout, stderr } = await execAsync(`open "${url}"`);
     
     if (stderr) {
-      console.error("Error opening OmniFocus URL:", stderr);
+      console.error("Script stderr output:", stderr);
     }
     
-  
-    return stdout;
+    if (stdout && stdout.trim()) {
+      try {
+        return JSON.parse(stdout);
+      } catch (parseError) {
+        console.error("Error parsing script output:", parseError);
+        return stdout;
+      }
+    } 
+    
+    return null;
   } catch (error) {
     console.error("Failed to execute OmniFocus script:", error);
     throw error;
   }
-} 
+}

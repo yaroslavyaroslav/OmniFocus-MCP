@@ -195,59 +195,23 @@
             // Silently handle task processing errors
           }
         });
-        
-        // Log batch progress
       }
   
-      // Convert Maps back to regular objects for JSON output
-      const finalExport = {
+      // For now, just return the tasks data to avoid truncation issues
+      // We'll store the full data structure internally for future use
+      const tasksOnlyExport = {
         exportDate: exportData.exportDate,
-        tasks: exportData.tasks,
-        projects: Object.fromEntries(exportData.projects),
-        folders: Object.fromEntries(exportData.folders),
-        tags: Object.fromEntries(exportData.tags)
+        tasks: exportData.tasks
       };
-  
-      const endTime = new Date();
       
-      // Send the data to our local server using URL.FetchRequest
-      try {
-        const jsonData = JSON.stringify(finalExport);
-        
-        // Create a fetch request to send data to our local server
-        const request = new URL.FetchRequest();
-        
-        // Set up the request to POST to our local server
-        request.url = URL.fromString("http://localhost:54767/data");
-        request.method = "POST";
-        request.headers = { "Content-Type": "application/json" };
-        request.bodyString = jsonData;
-        
-        // Make the request
-        request.fetch().then(response => {
-          // Process response silently
-        }).catch(error => {
-          // Handle error silently
-        });
-        
-        // Create a simplified export just with the tasks for easier return
-        const tasksOnlyExport = {
-          exportDate: finalExport.exportDate,
-          tasks: finalExport.tasks
-        };
-        
-        // Return a success message with the task count
-        return finalExport.tasks
-      } catch (error) {
-        return JSON.stringify({
-          success: false,
-          error: `Error sending data: ${error}`
-        });
-      }
+      const jsonData = JSON.stringify(tasksOnlyExport);
+      return jsonData;
+
     } catch (error) {
       return JSON.stringify({
         success: false,
         error: `Error exporting database: ${error}`
       });
     }
-  })();
+  }
+)();
