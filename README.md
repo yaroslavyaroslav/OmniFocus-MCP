@@ -1,100 +1,130 @@
 # OmniFocus MCP Server
 
-A Model Context Protocol (MCP) server that integrates with OmniFocus to enable Claude (or other models) to interact with your tasks and projects. 
+A Model Context Protocol (MCP) server that integrates with OmniFocus to enable Claude (or other MCP-compatible AI assistants) to interact with your tasks and projects.
+
+![OmniFocus MCP](https://raw.githubusercontent.com/themotionmachine/omnifocus-mcp-server/main/assets/omnifocus-mcp-logo.png)
+
+## 🌟 Overview
+
+This MCP server creates a bridge between AI assistants (like Claude) and your OmniFocus task management system. It gives AI models the ability to view, create, edit, and remove tasks and projects in your OmniFocus database through natural language conversations.
+Some ways you could use it: 
+
+- Translate the PDF of a syllabus into a fully specificed project with tasks, tags, defer dates, and due dates.
+- Turn a meeting transcript into a list of actions
+- Create visualizations of your tasks, projects, and tags
 
 
+## 🚀 Quick Start
 
-## Status
-> ⚠️ **Warning**: This is a work in progress. 
+### Prerequisites
+- macOS with OmniFocus installed
 
-### Roadmap to v1.0
+### Connecting to Claude
 
-- ✅ Added Tool for dumping the omnifocus database into model context. 
-- ✅ Add a tool for adding projects to omnifocus.
-- ✅ Add a tool for removing tasks or projects
-- ✅ Add a tool for editing any of the task or project fields (including marking as complete)
-- Explore the posibiility of interacting with custom perspectives
-- Write documentation and examples
+1. In Claude Desktop, add this MCP server to your configuration file at:
+```
+~/Library/Application Support/Claude/claude_desktop_config.json
+```
+
+2. Add the following configuration:
+```json
+{
+  "mcpServers": {
+    "omnifocus": {
+      "command": "npx",
+      "args": ["omnifocus-mcp"]
+    }
+  }
+}
+```
+
+3. Restart Claude Desktop
+
+## 🌈 Use Cases
+
+### Reorganize your projects, tasks, and tags
+> "I want every task to have an energy level tag. show me a list of all the tasks that don't have an energy level tag and your suggestions for what tag to add. I'll make any changes I think are appropriate. Then make the changes in OmniFocus."
 
 
-## Quick Start
+### Add tasks from any conversation
 
-## Overview
+> "Ok, thanks for the detailed explanation of why the rule of law is important. Add a recurring task to my activism project that reminds me to call my representative weekly. Include a summary of this conversation in the notes field."
 
-## Features
+### Quick, Virtual Perspectives
 
-### Tasks
-### dumpDatabase
+Get a summary of your current tasks and manage them conversationally:
 
-Returns a JSON object with the following properties:
+> "Show me all my flagged tasks due this week that don't mention "fish". 
 
-- `success`: Whether the database was dumped successfully.
-- `database`: The database object.
+### Process Transcripts or PDFs
 
-#### addTask
+Extract action items from meeting transcripts, academic research articles, or notes:
 
+> "I'm pasting in the transcript from today's product meeting. Please analyze it and create tasks in OmniFocus for any action items assigned to me. Put them in my 'Product Development' project."
+
+## 🔧 Available Tools
+
+The server currently provides these tools:
+
+### `dump_database`
+Gets the current state of your OmniFocus database.
+
+### `add_omnifocus_task`
 Add a new task to OmniFocus.
 
-Accepts a JSON object with the following properties:
-```
-- `name`: The name of the task.
-- `projectName`: The name of the project to add the task to.
-- `note`: The note to add to the task.
-- `dueDate`: The due date to add to the task.
-- `deferDate`: The defer date to add to the task.
-- `flagged`: Whether the task should be flagged.
-- `estimatedMinutes`: The estimated minutes to add to the task.
-- `tags`: The tags to add to the task.
+Parameters:
+- `name`: The name of the task
+- `projectName`: (Optional) The name of the project to add the task to
+- `note`: (Optional) Additional notes for the task
+- `dueDate`: (Optional) The due date of the task in ISO format
+- `deferDate`: (Optional) The defer date of the task in ISO format
+- `flagged`: (Optional) Whether the task is flagged or not
+- `estimatedMinutes`: (Optional) Estimated time to complete the task
+- `tags`: (Optional) Tags to assign to the task
 
-Returns a JSON object with the following properties:
-
-- `success`: Whether the task was added successfully.
-- `taskId`: The ID of the task.
-```
-
-#### removeItem
-
-Remove a task or project from OmniFocus.
-
-Accepts a JSON object with the following properties:
-```
-- `id`: The ID of the task or project to remove (optional if name is provided).
-- `name`: The name of the task or project to remove (used as fallback if ID is not provided).
-- `itemType`: The type of item to remove ('task' or 'project').
-
-Returns a JSON object with the following properties:
-
-- `success`: Whether the item was removed successfully.
-- `id`: The ID of the removed item.
-- `name`: The name of the removed item.
-- `error`: Error message if the removal failed.
-```
-
-### Projects
-
-#### addProject
-
+### `add_project`
 Add a new project to OmniFocus.
 
-Accepts a JSON object with the following properties:
-```
-- `name`: The name of the project.
-- `folderName`: The name of the folder to add the project to.
-- `note`: The note to add to the project.
-- `dueDate`: The due date to add to the project.
-- `deferDate`: The defer date to add to the project.
-- `flagged`: Whether the project should be flagged.
-- `estimatedMinutes`: The estimated minutes to add to the project.
-- `tags`: The tags to add to the project.
-- `sequential`: Whether tasks in the project should be sequential (default: false).
+Parameters:
+- `name`: The name of the project
+- `folderName`: (Optional) The name of the folder to add the project to
+- `note`: (Optional) Additional notes for the project
+- `dueDate`: (Optional) The due date of the project in ISO format
+- `deferDate`: (Optional) The defer date of the project in ISO format
+- `flagged`: (Optional) Whether the project is flagged or not
+- `estimatedMinutes`: (Optional) Estimated time to complete the project
+- `tags`: (Optional) Tags to assign to the project
+- `sequential`: (Optional) Whether tasks in the project should be sequential
 
-Returns a JSON object with the following properties:
+### `remove_item`
+Remove a task or project from OmniFocus.
 
-- `success`: Whether the project was added successfully.
-- `projectId`: The ID of the project.
-```
+Parameters:
+- `id`: (Optional) The ID of the task or project to remove
+- `name`: (Optional) The name of the task or project to remove
+- `itemType`: The type of item to remove ('task' or 'project')
 
-## Development
+### `edit_item`
+Edit a task or project in OmniFocus.
+
+Parameters:
+- `id`: (Optional) The ID of the task or project to edit
+- `name`: (Optional) The name of the task or project to edit
+- `itemType`: The type of item to edit ('task' or 'project')
+- Various parameters for editing properties
+
+## 🛠 Development
 
 Documentation to follow.
 
+## 🧠 How It Works
+
+This server uses AppleScript to communicate with OmniFocus, allowing it to interact with the application's native functionality. The server is built using the Model Context Protocol SDK, which provides a standardized way for AI models to interact with external tools and systems.
+
+## 📜 License
+
+MIT
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
