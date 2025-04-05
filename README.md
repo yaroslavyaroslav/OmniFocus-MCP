@@ -2,7 +2,7 @@
 
 A Model Context Protocol (MCP) server that integrates with OmniFocus to enable Claude (or other MCP-compatible AI assistants) to interact with your tasks and projects.
 
-![OmniFocus MCP](https://raw.githubusercontent.com/themotionmachine/omnifocus-mcp-server/main/assets/omnifocus-mcp-logo.png)
+![OmniFocus MCP](assets/omnifocus-mcp-logo.png)
 
 ## 🌟 Overview
 
