@@ -298,7 +298,7 @@ const EditItemSchema = z.object({
   newNote: z.string().optional().describe("New note for the item"),
   newDueDate: z.string().optional().describe("New due date in ISO format (YYYY-MM-DD or full ISO date); set to empty string to clear"),
   newDeferDate: z.string().optional().describe("New defer date in ISO format (YYYY-MM-DD or full ISO date); set to empty string to clear"),
-  newFlagged: z.boolean().optional().describe("New flagged status (set to false to remove flag, true to add flag)"),
+  newFlagged: z.boolean().optional().describe("Set flagged status (set to false for no flag, true for flag)"),
   newEstimatedMinutes: z.number().optional().describe("New estimated minutes"),
   
   // Task-specific fields
