@@ -1,5 +1,9 @@
 #!/usr/bin/env node
 // cli.cjs
-require('child_process').spawn('node', ['--experimental-modules', './dist/server.js'], { 
+const path = require('path');
+const childProcess = require('child_process');
+
+const serverPath = path.join(__dirname, 'dist', 'server.js');
+childProcess.spawn('node', ['--experimental-modules', serverPath], { 
     stdio: 'inherit'
-  });
+});
