@@ -10,10 +10,9 @@ A Model Context Protocol (MCP) server that integrates with OmniFocus to enable C
 
 - ✅ Added Tool for dumping the omnifocus database into model context. 
 - ✅ Add a tool for adding projects to omnifocus.
-- Add a tool for removing tasks 
+- ✅ Add a tool for removing tasks or projects
 - Add a tool for marking tasks as complete
 - Add a tool for editing any of the task fields
-- Add a tool for removing projects
 - Add a tool for editing any of the project fields
 - Explore the posibiility of interacting with custom perspectives
 - Write documentation and examples
@@ -52,6 +51,24 @@ Returns a JSON object with the following properties:
 
 - `success`: Whether the task was added successfully.
 - `taskId`: The ID of the task.
+```
+
+#### removeItem
+
+Remove a task or project from OmniFocus.
+
+Accepts a JSON object with the following properties:
+```
+- `id`: The ID of the task or project to remove (optional if name is provided).
+- `name`: The name of the task or project to remove (used as fallback if ID is not provided).
+- `itemType`: The type of item to remove ('task' or 'project').
+
+Returns a JSON object with the following properties:
+
+- `success`: Whether the item was removed successfully.
+- `id`: The ID of the removed item.
+- `name`: The name of the removed item.
+- `error`: Error message if the removal failed.
 ```
 
 ### Projects

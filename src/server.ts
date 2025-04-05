@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { dumpDatabase } from './tools/dumpDatabase.js';
 import { addOmniFocusTask, AddOmniFocusTaskParams } from './tools/primitives/addOmniFocusTask.js';
 import { addProject, AddProjectParams } from './tools/primitives/addProject.js';
+import { removeItem, RemoveItemParams } from './tools/primitives/removeItem.js';
 const execAsync = promisify(exec);
 
 // Define a type for OmniFocus data
@@ -197,6 +198,93 @@ server.tool(
   }
 );
 
+// Define Zod schema for remove_item parameters
+const RemoveItemSchema = z.object({
+  id: z.string().optional().describe("The ID of the task or project to remove"),
+  name: z.string().optional().describe("The name of the task or project to remove (as fallback if ID not provided)"),
+  itemType: z.enum(['task', 'project']).describe("Type of item to remove ('task' or 'project')")
+});
+
+server.tool(
+  "remove_item",
+  RemoveItemSchema.shape,
+  async (params: any, extra: any) => {
+    try {
+      // Validate that either id or name is provided
+      if (!params.id && !params.name) {
+        return {
+          content: [{
+            type: "text",
+            text: "Either id or name must be provided to remove an item."
+          }],
+          isError: true
+        };
+      }
+      
+      // Validate itemType
+      if (!['task', 'project'].includes(params.itemType)) {
+        return {
+          content: [{
+            type: "text",
+            text: `Invalid item type: ${params.itemType}. Must be either 'task' or 'project'.`
+          }],
+          isError: true
+        };
+      }
+      
+      // Log the remove operation for debugging
+      console.error(`Removing ${params.itemType} with ID: ${params.id || 'not provided'}, Name: ${params.name || 'not provided'}`);
+      
+      // Call the removeItem function 
+      const result = await removeItem(params as RemoveItemParams);
+      
+      if (result.success) {
+        // Item was removed successfully
+        const itemTypeLabel = params.itemType === 'task' ? 'Task' : 'Project';
+        
+        return {
+          content: [{
+            type: "text",
+            text: `✅ ${itemTypeLabel} "${result.name}" removed successfully.`
+          }]
+        };
+      } else {
+        // Item removal failed
+        let errorMsg = `Failed to remove ${params.itemType}`;
+        
+        if (result.error) {
+          if (result.error.includes("Item not found")) {
+            errorMsg = `${params.itemType.charAt(0).toUpperCase() + params.itemType.slice(1)} not found`;
+            if (params.id) errorMsg += ` with ID "${params.id}"`;
+            if (params.name) errorMsg += `${params.id ? ' or' : ' with'} name "${params.name}"`;
+            errorMsg += '.';
+          } else {
+            errorMsg += `: ${result.error}`;
+          }
+        }
+        
+        return {
+          content: [{
+            type: "text",
+            text: errorMsg
+          }],
+          isError: true
+        };
+      }
+    } catch (err: unknown) {
+      const error = err as Error;
+      console.error(`Tool execution error: ${error.message}`);
+      
+      return {
+        content: [{
+          type: "text",
+          text: `Error removing ${params.itemType}: ${error.message}`
+        }],
+        isError: true
+      };
+    }
+  }
+);
 
 // Start the MCP server
 const transport = new StdioServerTransport();
