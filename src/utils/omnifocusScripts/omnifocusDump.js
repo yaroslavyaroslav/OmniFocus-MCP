@@ -41,9 +41,9 @@
       const exportData = {
         exportDate: new Date().toISOString(),
         tasks: [],
-        projects: new Map(),
-        folders: new Map(),
-        tags: new Map()
+        projects: {},
+        folders: {},
+        tags: {}
       };
   
       // Filter active projects first to avoid unnecessary processing
@@ -67,10 +67,12 @@
       const activeTags = flattenedTags.filter(tag => tag.active);
       
       // Process projects in a single pass and store in Map for O(1) lookups
+      const projectsMap = new Map();
       activeProjects.forEach(project => {
         try {
-          exportData.projects.set(project.id.primaryKey, {
-            id: project.id.primaryKey,
+          const projectId = project.id.primaryKey;
+          const projectData = {
+            id: projectId,
             name: project.name,
             status: getEnumValue(project.status, projectStatusMap),
             folderID: project.parentFolder ? project.parentFolder.id.primaryKey : null,
@@ -83,39 +85,49 @@
             containsSingletonActions: project.containsSingletonActions,
             note: project.note || "",
             tasks: [] // Will be populated in the task loop
-          });
+          };
+          projectsMap.set(projectId, projectData);
+          exportData.projects[projectId] = projectData;
         } catch (projectError) {
           // Silently handle project processing errors
         }
       });
   
       // Process folders in a single pass
+      const foldersMap = new Map();
       activeFolders.forEach(folder => {
         try {
-          exportData.folders.set(folder.id.primaryKey, {
-            id: folder.id.primaryKey,
+          const folderId = folder.id.primaryKey;
+          const folderData = {
+            id: folderId,
             name: folder.name,
             parentFolderID: folder.parent ? folder.parent.id.primaryKey : null,
             status: getEnumValue(folder.status, folderStatusMap),
             projects: [],
             subfolders: []
-          });
+          };
+          foldersMap.set(folderId, folderData);
+          exportData.folders[folderId] = folderData;
         } catch (folderError) {
           // Silently handle folder processing errors
         }
       });
   
       // Process tags in a single pass
+      const tagsMap = new Map();
       activeTags.forEach(tag => {
         try {
-          exportData.tags.set(tag.id.primaryKey, {
-            id: tag.id.primaryKey,
+          const tagId = tag.id.primaryKey;
+          const tagData = {
+            id: tagId,
             name: tag.name,
             parentTagID: tag.parent ? tag.parent.id.primaryKey : null,
             active: tag.active,
             allowsNextAction: tag.allowsNextAction,
             tasks: []
-          });
+          };
+          tagsMap.set(tagId, tagData);
+          exportData.tags[tagId] = tagData;
         } catch (tagError) {
           // Silently handle tag processing errors
         }
@@ -124,9 +136,9 @@
       console.log("Building relationships and processing tasks simultaneously...");
       
       // Build folder relationships and project-folder relationships as we go
-      exportData.folders.forEach((folder, folderId) => {
-        if (folder.parentFolderID && exportData.folders.has(folder.parentFolderID)) {
-          const parentFolder = exportData.folders.get(folder.parentFolderID);
+      foldersMap.forEach((folder, folderId) => {
+        if (folder.parentFolderID && foldersMap.has(folder.parentFolderID)) {
+          const parentFolder = foldersMap.get(folder.parentFolderID);
           if (!parentFolder.subfolders.includes(folder.id)) {
             parentFolder.subfolders.push(folder.id);
           }
@@ -172,13 +184,13 @@
             exportData.tasks.push(taskData);
   
             // Add task ID to associated project (if it exists)
-            if (projectID && exportData.projects.has(projectID)) {
-              exportData.projects.get(projectID).tasks.push(taskData.id);
+            if (projectID && projectsMap.has(projectID)) {
+              projectsMap.get(projectID).tasks.push(taskData.id);
               
               // Update folder-project relationship (only once per project)
-              const project = exportData.projects.get(projectID);
-              if (project.folderID && exportData.folders.has(project.folderID)) {
-                const folder = exportData.folders.get(project.folderID);
+              const project = projectsMap.get(projectID);
+              if (project.folderID && foldersMap.has(project.folderID)) {
+                const folder = foldersMap.get(project.folderID);
                 if (!folder.projects.includes(project.id)) {
                   folder.projects.push(project.id);
                 }
@@ -187,8 +199,8 @@
   
             // Add task ID to associated tags
             taskTags.forEach(tagID => {
-              if (exportData.tags.has(tagID)) {
-                exportData.tags.get(tagID).tasks.push(taskData.id);
+              if (tagsMap.has(tagID)) {
+                tagsMap.get(tagID).tasks.push(taskData.id);
               }
             });
           } catch (taskError) {
@@ -197,14 +209,8 @@
         });
       }
   
-      // For now, just return the tasks data to avoid truncation issues
-      // We'll store the full data structure internally for future use
-      const tasksOnlyExport = {
-        exportDate: exportData.exportDate,
-        tasks: exportData.tasks
-      };
-      
-      const jsonData = JSON.stringify(tasksOnlyExport);
+      // Return the complete database export
+      const jsonData = JSON.stringify(exportData);
       return jsonData;
 
     } catch (error) {

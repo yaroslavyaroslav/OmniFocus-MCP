@@ -43,3 +43,47 @@ export interface OmnifocusTask {
     // Settings
     shouldUseFloatingTimeZone: boolean;
   }
+
+export interface OmnifocusDatabase {
+  exportDate: string;
+  tasks: OmnifocusTask[];
+  projects: Record<string, OmnifocusProject>;
+  folders: Record<string, OmnifocusFolder>;
+  tags: Record<string, OmnifocusTag>;
+}
+
+export interface OmnifocusProject {
+  id: string;
+  name: string;
+  status: string;
+  folderID: string | null;
+  sequential: boolean;
+  effectiveDueDate: string | null;
+  effectiveDeferDate: string | null;
+  dueDate: string | null;
+  deferDate: string | null;
+  completedByChildren: boolean;
+  containsSingletonActions: boolean;
+  note: string;
+  tasks: string[]; // Task IDs
+  flagged?: boolean;
+  estimatedMinutes?: number | null;
+}
+
+export interface OmnifocusFolder {
+  id: string;
+  name: string;
+  parentFolderID: string | null;
+  status: string;
+  projects: string[]; // Project IDs
+  subfolders: string[]; // Subfolder IDs
+}
+
+export interface OmnifocusTag {
+  id: string;
+  name: string;
+  parentTagID: string | null;
+  active: boolean;
+  allowsNextAction: boolean;
+  tasks: string[]; // Task IDs
+}

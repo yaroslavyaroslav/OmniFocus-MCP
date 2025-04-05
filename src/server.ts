@@ -31,58 +31,20 @@ server.tool(
   {}, // No parameters needed
   async () => {
     try {
-      const tasks = await dumpDatabase();
+      const database = await dumpDatabase();
       
-
-      // Format and return the tasks
-      let responseText = "Found " + tasks.length + " tasks:\n\n";
-      
-      // Display all tasks instead of just the first 20
-      for (var i = 0; i < tasks.length; i++) {
-        const task = tasks[i];
-        const taskName = task.name || "[No Name]";
-        const dueDateStr = task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'No due date';
-        const dueString = "Due: " + dueDateStr;
-        const flaggedString = task.flagged ? '⭐' : '';
-        const repeatingString = task.isRepeating ? '🔄' : '';
-        
-        responseText += (i+1) + ". " + flaggedString + repeatingString + " " + taskName + " (" + dueString + ")\n";
-        
-        if (task.note && task.note.trim() !== '') {
-          responseText += "   Note: " + task.note + "\n";
-        }
-        
-        // Add repetition information if task is repeating
-        if (task.isRepeating && task.repetitionRule) {
-          let repetitionInfo = "   Repeats: " + task.repetitionRule;
-          if (task.repetitionMethod) {
-            repetitionInfo += " (" + task.repetitionMethod + " repetition)";
-          }
-          responseText += repetitionInfo + "\n";
-        }
-        
-        responseText += '\n';
-      }
-      
-      if (tasks.length === 0) {
-          responseText = "No tasks found. This could be because:\n" + 
-                         "1. OmniFocus is not running\n" +
-                         "2. The script failed to execute properly\n" + 
-                         "3. There are no tasks in your OmniFocus database\n" +
-                         "Please check the server logs for more information.";
-      }
-
+      // Return the complete database as JSON
       return {
         content: [{
           type: "text",
-          text: responseText
+          text: JSON.stringify(database, null, 2)
         }]
       };
     } catch (err: unknown) {
       return {
         content: [{
           type: "text",
-          text: `Error listing tasks. Please ensure OmniFocus is running and try again.`
+          text: `Error dumping database. Please ensure OmniFocus is running and try again.`
         }],
         isError: true
       };

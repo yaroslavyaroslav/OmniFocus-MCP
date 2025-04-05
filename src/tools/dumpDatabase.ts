@@ -1,8 +1,8 @@
-import { OmnifocusTask } from '../types.js';
+import { OmnifocusDatabase, OmnifocusTask, OmnifocusProject, OmnifocusFolder, OmnifocusTag } from '../types.js';
 import { executeOmniFocusScript } from '../utils/scriptExecution.js';
 
 import fs from 'fs';
-// Define an interface for the task object returned by omnifocusDump.js
+// Define interfaces for the data returned from the script
 interface OmnifocusDumpTask {
   id: string;
   name: string;
@@ -23,30 +23,81 @@ interface OmnifocusDumpTask {
   inInbox: boolean;
 }
 
-// Interface for the data returned from the script
+interface OmnifocusDumpProject {
+  id: string;
+  name: string;
+  status: string;
+  folderID: string | null;
+  sequential: boolean;
+  effectiveDueDate: string | null;
+  effectiveDeferDate: string | null;
+  dueDate: string | null;
+  deferDate: string | null;
+  completedByChildren: boolean;
+  containsSingletonActions: boolean;
+  note: string;
+  tasks: string[];
+}
+
+interface OmnifocusDumpFolder {
+  id: string;
+  name: string;
+  parentFolderID: string | null;
+  status: string;
+  projects: string[];
+  subfolders: string[];
+}
+
+interface OmnifocusDumpTag {
+  id: string;
+  name: string;
+  parentTagID: string | null;
+  active: boolean;
+  allowsNextAction: boolean;
+  tasks: string[];
+}
+
 interface OmnifocusDumpData {
   exportDate: string;
   tasks: OmnifocusDumpTask[];
+  projects: Record<string, OmnifocusDumpProject>;
+  folders: Record<string, OmnifocusDumpFolder>;
+  tags: Record<string, OmnifocusDumpTag>;
 }
 
 // Main function to dump the database
-export async function dumpDatabase(): Promise<OmnifocusTask[]> {
+export async function dumpDatabase(): Promise<OmnifocusDatabase> {
   
   try {
-    // Execute the OmniFocus script - this will trigger a fetch that will update latestOmniFocusData
+    // Execute the OmniFocus script
     const data = await executeOmniFocusScript('@omnifocusDump.js') as OmnifocusDumpData;
     // wait 1 second
     await new Promise(resolve => setTimeout(resolve, 1000));
  
-    // Remove unnecessary break statement and empty check
+    // Create an empty database if no data returned
     if (!data) {
-      return [];
+      return {
+        exportDate: new Date().toISOString(),
+        tasks: [],
+        projects: {},
+        folders: {},
+        tags: {}
+      };
     }
     
-    // If we have tasks in the data
+    // Initialize the database object
+    const database: OmnifocusDatabase = {
+      exportDate: data.exportDate,
+      tasks: [],
+      projects: {},
+      folders: {},
+      tags: {}
+    };
+    
+    // Process tasks
     if (data.tasks && Array.isArray(data.tasks)) {
       // Convert the tasks to our OmnifocusTask format
-      return data.tasks.map((task: OmnifocusDumpTask) => ({
+      database.tasks = data.tasks.map((task: OmnifocusDumpTask) => ({
         id: String(task.id),
         name: String(task.name),
         note: String(task.note || ""),
@@ -75,10 +126,60 @@ export async function dumpDatabase(): Promise<OmnifocusTask[]> {
         notifications: [], // Default empty array
         shouldUseFloatingTimeZone: false // Default value
       }));
-    } else {
-      console.error("No tasks found in the data or data structure is unexpected:", data);
-      return [];
     }
+    
+    // Process projects
+    if (data.projects) {
+      for (const [id, project] of Object.entries(data.projects)) {
+        database.projects[id] = {
+          id: String(project.id),
+          name: String(project.name),
+          status: String(project.status),
+          folderID: project.folderID || null,
+          sequential: Boolean(project.sequential),
+          effectiveDueDate: project.effectiveDueDate,
+          effectiveDeferDate: project.effectiveDeferDate,
+          dueDate: project.dueDate,
+          deferDate: project.deferDate,
+          completedByChildren: Boolean(project.completedByChildren),
+          containsSingletonActions: Boolean(project.containsSingletonActions),
+          note: String(project.note || ""),
+          tasks: project.tasks || [],
+          flagged: false, // Default value
+          estimatedMinutes: null // Default value
+        };
+      }
+    }
+    
+    // Process folders
+    if (data.folders) {
+      for (const [id, folder] of Object.entries(data.folders)) {
+        database.folders[id] = {
+          id: String(folder.id),
+          name: String(folder.name),
+          parentFolderID: folder.parentFolderID || null,
+          status: String(folder.status),
+          projects: folder.projects || [],
+          subfolders: folder.subfolders || []
+        };
+      }
+    }
+    
+    // Process tags
+    if (data.tags) {
+      for (const [id, tag] of Object.entries(data.tags)) {
+        database.tags[id] = {
+          id: String(tag.id),
+          name: String(tag.name),
+          parentTagID: tag.parentTagID || null,
+          active: Boolean(tag.active),
+          allowsNextAction: Boolean(tag.allowsNextAction),
+          tasks: tag.tasks || []
+        };
+      }
+    }
+    
+    return database;
   } catch (error) {
     console.error("Error in dumpDatabase:", error);
     throw error;
