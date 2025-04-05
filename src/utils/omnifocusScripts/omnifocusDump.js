@@ -224,7 +224,7 @@
         const request = new URL.FetchRequest();
         
         // Set up the request to POST to our local server
-        request.url = URL.fromString("http://localhost:9999/data");
+        request.url = URL.fromString("http://localhost:54767/data");
         request.method = "POST";
         request.headers = { "Content-Type": "application/json" };
         request.bodyString = jsonData;
