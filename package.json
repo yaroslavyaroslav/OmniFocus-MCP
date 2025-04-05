@@ -1,15 +1,14 @@
 {
   "name": "omnifocus-mcp",
-  "version": "1.0.1",
+  "version": "1.0.4",
   "description": "Model Context Protocol (MCP) server that integrates with OmniFocus for AI assistant interaction",
-  "type": "module",
   "main": "dist/server.js",
   "bin": {
     "omnifocus-mcp": "./dist/server.js"
   },
   "scripts": {
     "type": "module",
-    "build": "tsc && npm run copy-files && chmod 755 build/index.js",
+    "build": "tsc && npm run copy-files && chmod 755 dist/server.js",
     "copy-files": "mkdir -p dist/utils/omnifocusScripts && cp src/utils/omnifocusScripts/*.js dist/utils/omnifocusScripts/",
     "start": "node dist/server.js",
     "dev": "tsc -w"

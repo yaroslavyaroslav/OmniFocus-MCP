@@ -32,7 +32,7 @@ Some ways you could use it:
   "mcpServers": {
     "omnifocus": {
       "command": "npx",
-      "args": ["omnifocus-mcp"]
+      "args": ["-y", "omnifocus-mcp"]
     }
   }
 }
