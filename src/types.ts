@@ -18,6 +18,7 @@ export interface OmnifocusTask {
     
     // Organization
     tags: string[]; // Tag IDs
+    tagNames: string[]; // Human-readable tag names
     parentId: string | null;
     containingProjectId: string | null;
     projectId: string | null;

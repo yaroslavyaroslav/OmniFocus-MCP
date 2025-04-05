@@ -97,35 +97,43 @@ export async function dumpDatabase(): Promise<OmnifocusDatabase> {
     // Process tasks
     if (data.tasks && Array.isArray(data.tasks)) {
       // Convert the tasks to our OmnifocusTask format
-      database.tasks = data.tasks.map((task: OmnifocusDumpTask) => ({
-        id: String(task.id),
-        name: String(task.name),
-        note: String(task.note || ""),
-        flagged: Boolean(task.flagged),
-        completed: task.taskStatus === "Completed",
-        completionDate: null, // Not available in the new format
-        dropDate: null, // Not available in the new format
-        taskStatus: String(task.taskStatus),
-        active: task.taskStatus !== "Completed" && task.taskStatus !== "Dropped",
-        dueDate: task.dueDate,
-        deferDate: task.deferDate,
-        estimatedMinutes: task.estimatedMinutes ? Number(task.estimatedMinutes) : null,
-        tags: task.tags || [],
-        parentId: task.parentTaskID || null,
-        containingProjectId: task.projectID || null,
-        projectId: task.projectID || null,
-        childIds: task.children || [],
-        hasChildren: (task.children && task.children.length > 0) || false,
-        sequential: Boolean(task.sequential),
-        completedByChildren: Boolean(task.completedByChildren),
-        isRepeating: false, // Not available in the new format
-        repetitionMethod: null, // Not available in the new format 
-        repetitionRule: null, // Not available in the new format
-        attachments: [], // Default empty array
-        linkedFileURLs: [], // Default empty array
-        notifications: [], // Default empty array
-        shouldUseFloatingTimeZone: false // Default value
-      }));
+      database.tasks = data.tasks.map((task: OmnifocusDumpTask) => {
+        // Get tag names from the tag IDs
+        const tagNames = (task.tags || []).map(tagId => {
+          return data.tags[tagId]?.name || 'Unknown Tag';
+        });
+        
+        return {
+          id: String(task.id),
+          name: String(task.name),
+          note: String(task.note || ""),
+          flagged: Boolean(task.flagged),
+          completed: task.taskStatus === "Completed",
+          completionDate: null, // Not available in the new format
+          dropDate: null, // Not available in the new format
+          taskStatus: String(task.taskStatus),
+          active: task.taskStatus !== "Completed" && task.taskStatus !== "Dropped",
+          dueDate: task.dueDate,
+          deferDate: task.deferDate,
+          estimatedMinutes: task.estimatedMinutes ? Number(task.estimatedMinutes) : null,
+          tags: task.tags || [],
+          tagNames: tagNames,
+          parentId: task.parentTaskID || null,
+          containingProjectId: task.projectID || null,
+          projectId: task.projectID || null,
+          childIds: task.children || [],
+          hasChildren: (task.children && task.children.length > 0) || false,
+          sequential: Boolean(task.sequential),
+          completedByChildren: Boolean(task.completedByChildren),
+          isRepeating: false, // Not available in the new format
+          repetitionMethod: null, // Not available in the new format 
+          repetitionRule: null, // Not available in the new format
+          attachments: [], // Default empty array
+          linkedFileURLs: [], // Default empty array
+          notifications: [], // Default empty array
+          shouldUseFloatingTimeZone: false // Default value
+        };
+      });
     }
     
     // Process projects
