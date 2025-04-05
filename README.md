@@ -11,14 +11,13 @@ A Model Context Protocol (MCP) server that integrates with OmniFocus to enable C
 - ✅ Added Tool for dumping the omnifocus database into model context. 
 - ✅ Add a tool for adding projects to omnifocus.
 - ✅ Add a tool for removing tasks or projects
-- Add a tool for marking tasks as complete
-- Add a tool for editing any of the task fields
-- Add a tool for editing any of the project fields
+- Add a tool for editing any of the task or project fields (including marking as complete)
 - Explore the posibiility of interacting with custom perspectives
 - Write documentation and examples
 
 
 ## Quick Start
+
 
 ## Overview
 
