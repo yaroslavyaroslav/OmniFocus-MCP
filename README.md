@@ -12,6 +12,8 @@ Some ways you could use it:
 - Translate the PDF of a syllabus into a fully specificed project with tasks, tags, defer dates, and due dates.
 - Turn a meeting transcript into a list of actions
 - Create visualizations of your tasks, projects, and tags
+- Process multiple tasks or projects in a single operation
+- Bulk manage your OmniFocus items efficiently
 
 
 ## 🚀 Quick Start
@@ -61,6 +63,13 @@ Get a summary of your current tasks and manage them conversationally:
 Extract action items from meeting transcripts, academic research articles, or notes:
 
 > "I'm pasting in the transcript from today's product meeting. Please analyze it and create tasks in OmniFocus for any action items assigned to me. Put them in my 'Product Development' project."
+
+### Batch Operations
+
+Manage multiple items efficiently:
+
+> "I have a list of 20 tasks from this meeting transcript. Please add them all to my 'Q2 Planning' project with appropriate tags and due dates."
+
 
 ## 🔧 Available Tools
 
@@ -112,6 +121,32 @@ Parameters:
 - `name`: (Optional) The name of the task or project to edit
 - `itemType`: The type of item to edit ('task' or 'project')
 - Various parameters for editing properties
+
+### `batch_add_items`
+Add multiple tasks or projects to OmniFocus in a single operation.
+
+Parameters:
+- `items`: Array of items to add, where each item can be:
+  - `type`: The type of item ('task' or 'project')
+  - `name`: The name of the item
+  - `note`: (Optional) Additional notes
+  - `dueDate`: (Optional) Due date in ISO format
+  - `deferDate`: (Optional) Defer date in ISO format
+  - `flagged`: (Optional) Whether the item is flagged
+  - `estimatedMinutes`: (Optional) Estimated completion time
+  - `tags`: (Optional) Array of tags
+  - `projectName`: (Optional) For tasks: the project to add to
+  - `folderName`: (Optional) For projects: the folder to add to
+  - `sequential`: (Optional) For projects: whether tasks are sequential
+
+### `batch_remove_items`
+Remove multiple tasks or projects from OmniFocus in a single operation.
+
+Parameters:
+- `items`: Array of items to remove, where each item can be:
+  - `id`: (Optional) The ID of the item to remove
+  - `name`: (Optional) The name of the item to remove
+  - `itemType`: The type of item ('task' or 'project')
 
 ## 🛠 Development
 
