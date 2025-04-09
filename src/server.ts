@@ -9,6 +9,8 @@ import * as addOmniFocusTaskTool from './tools/definitions/addOmniFocusTask.js';
 import * as addProjectTool from './tools/definitions/addProject.js';
 import * as removeItemTool from './tools/definitions/removeItem.js';
 import * as editItemTool from './tools/definitions/editItem.js';
+import * as batchAddItemsTool from './tools/definitions/batchAddItems.js';
+import * as batchRemoveItemsTool from './tools/definitions/batchRemoveItems.js';
 
 // Create an MCP server
 const server = new McpServer({
@@ -50,6 +52,20 @@ server.tool(
   "Edit a task or project in OmniFocus",
   editItemTool.schema.shape,
   editItemTool.handler
+);
+
+server.tool(
+  "batch_add_items",
+  "Add multiple tasks or projects to OmniFocus in a single operation",
+  batchAddItemsTool.schema.shape,
+  batchAddItemsTool.handler
+);
+
+server.tool(
+  "batch_remove_items",
+  "Remove multiple tasks or projects from OmniFocus in a single operation",
+  batchRemoveItemsTool.schema.shape,
+  batchRemoveItemsTool.handler
 );
 
 // Start the MCP server
