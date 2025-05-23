@@ -58,7 +58,6 @@ export async function handler(args: z.infer<typeof schema>, extra: RequestHandle
     }
   } catch (err: unknown) {
     const error = err as Error;
-    console.error(`Tool execution error: ${error.message}`);
     return {
       content: [{
         type: "text" as const,

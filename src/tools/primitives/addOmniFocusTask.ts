@@ -38,23 +38,21 @@ function generateAppleScript(params: AddOmniFocusTaskParams): string {
     tell application "OmniFocus"
       tell front document
         -- Determine the container (parent task, project, or inbox)
-        if "${parentTaskId}" is not "" or "${parentTaskName}" is not "" then
-          -- Use parent task
+        if "${parentTaskId}" is not "" then
+          -- Use parent task by ID
           try
-            if "${parentTaskId}" is not "" then
-              -- Find parent by ID
-              set parentTask to first flattened task where id = "${parentTaskId}"
-            else
-              -- Find parent by name
-              set parentTask to first flattened task where name = "${parentTaskName}"
-            end if
+            set parentTask to first flattened task where id = "${parentTaskId}"
             set newTask to make new task with properties {name:"${name}"} at end of tasks of parentTask
           on error
-            if "${parentTaskId}" is not "" then
-              return "{\\\"success\\\":false,\\\"error\\\":\\\"Parent task not found with ID: ${parentTaskId}\\\"}"
-            else
-              return "{\\\"success\\\":false,\\\"error\\\":\\\"Parent task not found with name: ${parentTaskName}\\\"}"
-            end if
+            return "{\\\"success\\\":false,\\\"error\\\":\\\"Parent task not found with ID: ${parentTaskId}\\\"}"
+          end try
+        else if "${parentTaskName}" is not "" then
+          -- Use parent task by name
+          try
+            set parentTask to first flattened task where name = "${parentTaskName}"
+            set newTask to make new task with properties {name:"${name}"} at end of tasks of parentTask
+          on error
+            return "{\\\"success\\\":false,\\\"error\\\":\\\"Parent task not found with name: ${parentTaskName}\\\"}"
           end try
         else if "${projectName}" is "" then
           -- Use inbox of the document
@@ -115,16 +113,8 @@ export async function addOmniFocusTask(params: AddOmniFocusTaskParams): Promise<
     // Generate AppleScript
     const script = generateAppleScript(params);
     
-    console.error("Executing AppleScript directly...");
-    
     // Execute AppleScript directly
     const { stdout, stderr } = await execAsync(`osascript -e '${script}'`);
-    
-    if (stderr) {
-      console.error("AppleScript stderr:", stderr);
-    }
-    
-    console.error("AppleScript stdout:", stdout);
     
     // Parse the result
     try {
@@ -137,14 +127,12 @@ export async function addOmniFocusTask(params: AddOmniFocusTaskParams): Promise<
         error: result.error
       };
     } catch (parseError) {
-      console.error("Error parsing AppleScript result:", parseError);
       return {
         success: false,
         error: `Failed to parse result: ${stdout}`
       };
     }
   } catch (error: any) {
-    console.error("Error in addOmniFocusTask:", error);
     return {
       success: false,
       error: error?.message || "Unknown error in addOmniFocusTask"
