@@ -58,6 +58,12 @@ When you first use the OmniFocus MCP server:
 
 ## 🌈 Use Cases
 
+### Create Nested Task Structures
+
+> "Create a 'Supermarket Shopping' task with these items as subtasks: Buy milk, Buy bread, Buy eggs, Buy vegetables."
+
+The MCP server now supports nested tasks, allowing you to create hierarchical task structures that match OmniFocus's native capabilities.
+
 ### Reorganize your projects, tasks, and tags
 > "I want every task to have an energy level tag. show me a list of all the tasks that don't have an energy level tag and your suggestions for what tag to add. I'll make any changes I think are appropriate. Then make the changes in OmniFocus."
 
@@ -98,12 +104,34 @@ Add a new task to OmniFocus.
 Parameters:
 - `name`: The name of the task
 - `projectName`: (Optional) The name of the project to add the task to
+- `parentTaskId`: (Optional) The ID of the parent task to nest this task under
+- `parentTaskName`: (Optional) The name of the parent task to nest this task under
 - `note`: (Optional) Additional notes for the task
 - `dueDate`: (Optional) The due date of the task in ISO format
 - `deferDate`: (Optional) The defer date of the task in ISO format
 - `flagged`: (Optional) Whether the task is flagged or not
 - `estimatedMinutes`: (Optional) Estimated time to complete the task
 - `tags`: (Optional) Tags to assign to the task
+
+Example - Creating nested tasks:
+```
+// Create parent task
+add_omnifocus_task({
+  name: "Supermarket Shopping",
+  dueDate: "2024-01-15"
+})
+
+// Create subtasks
+add_omnifocus_task({
+  name: "Buy milk",
+  parentTaskName: "Supermarket Shopping"
+})
+
+add_omnifocus_task({
+  name: "Buy bread",
+  parentTaskName: "Supermarket Shopping"
+})
+```
 
 ### `add_project`
 Add a new project to OmniFocus.
@@ -150,6 +178,8 @@ Parameters:
   - `estimatedMinutes`: (Optional) Estimated completion time
   - `tags`: (Optional) Array of tags
   - `projectName`: (Optional) For tasks: the project to add to
+  - `parentTaskId`: (Optional) For tasks: parent task ID for nesting
+  - `parentTaskName`: (Optional) For tasks: parent task name for nesting
   - `folderName`: (Optional) For projects: the folder to add to
   - `sequential`: (Optional) For projects: whether tasks are sequential
 
