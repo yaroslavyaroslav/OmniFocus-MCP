@@ -20,15 +20,15 @@ Some ways you could use it:
 
 ### Prerequisites
 - macOS with OmniFocus installed
+- Claude Desktop app
 
-### Connecting to Claude
+### Installation
 
-1. In Claude Desktop, add this MCP server to your configuration file at:
-```
-~/Library/Application Support/Claude/claude_desktop_config.json
-```
+1. Open Claude Desktop's configuration file:
+   - Location: `~/Library/Application Support/Claude/claude_desktop_config.json`
+   - You can open it with: `open -e ~/Library/Application\ Support/Claude/claude_desktop_config.json`
 
-2. Add the following configuration:
+2. Add the OmniFocus MCP server to the configuration:
 ```json
 {
   "mcpServers": {
@@ -40,7 +40,21 @@ Some ways you could use it:
 }
 ```
 
-3. Restart Claude Desktop
+> **Note**: If you already have other MCP servers configured, add the "omnifocus" entry to your existing "mcpServers" object.
+
+3. Save the file and restart Claude Desktop
+
+4. Verify the connection:
+   - In Claude, you should see OmniFocus tools available
+   - Try asking: "Can you see my OmniFocus tasks?"
+
+### First-Time Setup
+
+When you first use the OmniFocus MCP server:
+
+1. **macOS will prompt for permissions**: You'll need to grant AppleScript access to OmniFocus
+2. **Initial data load**: The first `dump_database` operation may take a moment for large databases
+3. **Test the connection**: Ask Claude to show you a summary of your tasks to ensure everything is working
 
 ## 🌈 Use Cases
 
@@ -150,7 +164,59 @@ Parameters:
 
 ## 🛠 Development
 
-Documentation to follow.
+### Local Development Setup
+
+1. Clone the repository:
+```bash
+git clone https://github.com/themotionmachine/omnifocus-mcp-server.git
+cd omnifocus-mcp-server
+```
+
+2. Install dependencies and build:
+```bash
+npm install
+npm run build
+```
+
+3. Run the server locally:
+```bash
+npm start
+# Or use the CLI wrapper:
+node cli.cjs
+```
+
+### Using Your Local Version in Claude Desktop
+
+To use your local development version instead of the npm package:
+
+1. Update your Claude Desktop config to point to your local installation:
+```json
+{
+  "mcpServers": {
+    "omnifocus": {
+      "command": "node",
+      "args": ["/absolute/path/to/omnifocus-mcp-server/cli.cjs"]
+    }
+  }
+}
+```
+
+2. Restart Claude Desktop to use your local version
+
+### Development Commands
+
+```bash
+npm run build    # Build TypeScript and copy AppleScript files
+npm run dev      # Watch mode for TypeScript compilation
+npm start        # Run the built server
+```
+
+### Architecture
+
+- **TypeScript**: Source code in `src/`
+- **MCP SDK**: Uses Model Context Protocol for AI integration
+- **AppleScript/JXA**: Native OmniFocus interaction via `src/utils/omnifocusScripts/`
+- **Tool System**: Modular tools in `src/tools/` with definitions and primitives
 
 ## 🧠 How It Works
 
