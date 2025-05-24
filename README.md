@@ -64,6 +64,17 @@ When you first use the OmniFocus MCP server:
 
 The MCP server now supports nested tasks, allowing you to create hierarchical task structures that match OmniFocus's native capabilities.
 
+### Find and Reference Tasks by ID
+
+> "Show me the details of the task 'Review quarterly report'"
+> "Create a subtask under task ID iKNpsVubKhG"
+
+With ID visibility in `dump_database` and the new `get_task_details` tool, you can now:
+- See task IDs directly in the database dump
+- Look up any task by name to get its ID
+- Use exact IDs for reliable parent-child relationships
+- Avoid ambiguity when multiple tasks have similar names
+
 ### Reorganize your projects, tasks, and tags
 > "I want every task to have an energy level tag. show me a list of all the tasks that don't have an energy level tag and your suggestions for what tag to add. I'll make any changes I think are appropriate. Then make the changes in OmniFocus."
 
@@ -96,7 +107,21 @@ Manage multiple items efficiently:
 The server currently provides these tools:
 
 ### `dump_database`
-Gets the current state of your OmniFocus database.
+Gets the current state of your OmniFocus database. Now includes task and project IDs in the output for easy reference when creating nested tasks or relationships.
+
+### `get_task_details`
+Get detailed information about a specific task by ID or name.
+
+Parameters:
+- `taskId`: (Optional) The ID of the task to get details for
+- `taskName`: (Optional) The name of the task to get details for (partial match supported)
+
+This tool provides comprehensive task information including:
+- Full task properties (status, dates, flags, etc.)
+- Parent/child relationships with IDs
+- Project association
+- All associated tags
+- Complete metadata
 
 ### `add_omnifocus_task`
 Add a new task to OmniFocus.
