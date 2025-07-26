@@ -312,10 +312,16 @@ mkfifo /tmp/mcp.in /tmp/mcp.out
 # Start a persistent feed that re-opens the FIFO so the server doesn't see EOF:
 while true; do cat /tmp/mcp.in; done | node cli.cjs 2>&1 > /tmp/mcp.out &
 
-# In another shell, tail the server’s responses live:
+## Shell-based test: initialize + function calls
+
+# In one shell, tail the server’s responses:
 tail -f /tmp/mcp.out &
 
-# In yet another shell, send function_call payloads:
+# In another shell, send the MCP initialize handshake to start a session:
+init='{"type":"initialize","arguments":{}}'
+printf 'Content-Length: %d\r\n\r\n%s' "${#init}" "$init" > /tmp/mcp.in
+
+# Now send your function_call payloads:
 payload=…  # build your function_call JSON as before
 printf 'Content-Length: %d\r\n\r\n%s' "${#payload}" "$payload" > /tmp/mcp.in
 ```
@@ -327,10 +333,14 @@ mkfifo /tmp/mcp.in /tmp/mcp.out
 # Persistent feed loop (Fish):
 while true; cat /tmp/mcp.in; end | node cli.cjs 2>&1 > /tmp/mcp.out &
 
-# Tail the server’s responses:
+# Tail the server’s responses live:
 tail -f /tmp/mcp.out &
 
-# Send function_call payloads:
+# Send the MCP initialize handshake:
+set init (printf '%s' '{"type":"initialize","arguments":{}}')
+printf "Content-Length: %d\r\n\r\n%s" (string length -- $init) $init > /tmp/mcp.in
+
+# Then send your function_call payloads:
 printf "Content-Length: %d\r\n\r\n%s" $len $payload > /tmp/mcp.in
 ```
 
