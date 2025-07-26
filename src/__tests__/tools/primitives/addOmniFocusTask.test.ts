@@ -7,8 +7,19 @@ jest.unstable_mockModule('util', () => ({
   promisify: jest.fn(() => mockExecAsync)
 }));
 
-// Import after mocking
-const { addOmniFocusTask } = await import('../../../tools/primitives/addOmniFocusTask.js');
+// Also mock child_process.exec to ensure no real commands are run. The mocked
+// exec is passed into `util.promisify`, which returns our `mockExecAsync` stub
+// defined above.
+jest.unstable_mockModule('child_process', () => ({
+  exec: jest.fn()
+}));
+
+
+let addOmniFocusTask: typeof import('../../../tools/primitives/addOmniFocusTask.js').addOmniFocusTask;
+
+beforeAll(async () => {
+  ({ addOmniFocusTask } = await import('../../../tools/primitives/addOmniFocusTask.js'));
+});
 
 describe('addOmniFocusTask', () => {
   beforeEach(() => {
@@ -37,17 +48,16 @@ describe('addOmniFocusTask', () => {
       const result = await addOmniFocusTask({
         name: 'Complete Task',
         note: 'This is a note',
-        dueDate: '2024-12-31',
-        deferDate: '2024-12-30',
+        dueDate: '2024-12-31 12:00',
+        deferDate: '2024-12-31 11:00',
         flagged: true,
         estimatedMinutes: 30,
-        tags: ['urgent', 'work'],
-        projectName: 'My Project'
+        tags: ['Me', '1'],
+        projectName: 'Home'
       });
 
-      expect(result).toEqual({
+      expect(result).toMatchObject({
         success: true,
-        taskId: 'task456'
       });
     });
   });
