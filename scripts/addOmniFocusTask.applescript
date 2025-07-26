@@ -4,7 +4,7 @@ set parentTaskName to "" -- e.g. "My Parent Task"
 set projectName to "Home" -- e.g. "My Project"
 set someName to "Buy eggs"
 set someNote to "This is the someNote for a eggs buy" -- e.g. "Additional details"
-set dueDate to "2025-08-27 12:00" -- ISO date string, e.g. "2024-01-15"
+set dueDate to "2025-08-27T12:20" -- ISO date string, e.g. "2024-01-15"
 set deferDate to "" -- ISO date string
 set flaggedTag to false -- set to true to flag the task
 set estimatedMinutes to 15 -- set to minutes to estimate
@@ -54,12 +54,12 @@ try
 
       if dueDate is not "" then
         -- Parse ISO 8601 string into AppleScript date
-        set due date of newTask to my parseISODate(dueDate)
+        set due date of newTask to my parseISOISO8601(dueDate)
       end if
 
       if deferDate is not "" then
         -- Parse ISO 8601 string into AppleScript date
-        set defer date of newTask to my parseISODate(deferDate)
+        set defer date of newTask to my parseISOISO8601(deferDate)
       end if
 
       if flaggedTag then
@@ -91,30 +91,13 @@ on error errorMessage
   return "{\"success\":false,\"error\":\"" & errorMessage & "\"}"
 end try
 
--- Handler to parse ISO 8601 date strings into AppleScript date objects
-on parseISODate(isoString)
-  set {oldDelims, AppleScript's text item delimiters} to {AppleScript's text item delimiters, {"-", "T", " ", ":"}}
-  set parts to text items of isoString
-  set AppleScript's text item delimiters to oldDelims
-  set y to (item 1 of parts) as integer
-  set m to (item 2 of parts) as integer
-  set d to (item 3 of parts) as integer
-  set h to 0
-  set mi to 0
-  set s to 0
-  if (count of parts) > 3 then
-    set h to (item 4 of parts) as integer
-    set mi to (item 5 of parts) as integer
-  end if
-  if (count of parts) > 5 then
-    set s to (item 6 of parts) as integer
-  end if
-  set newDate to current date
-  set year of newDate to y
-  set month of newDate to m
-  set day of newDate to d
-  set hours of newDate to h
-  set minutes of newDate to mi
-  set seconds of newDate to s
-  return newDate
-end parseISODate
+use framework "Foundation"
+
+on parseISOISO8601(isoString)
+    -- create formatter
+    set fmt to current application's NSDateFormatter's alloc()'s init()
+    fmt's setLocale:(current application's NSLocale's localeWithLocaleIdentifier_("en_US_POSIX"))
+    fmt's setDateFormat_("yyyy-MM-dd'T'HH:mm")
+    -- parse and return NSDate bridged to AppleScript date
+    return (fmt's dateFromString_(isoString)) as date
+end parseISOISO8601

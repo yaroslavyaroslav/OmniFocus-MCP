@@ -11,6 +11,11 @@ export default {
       'ts-jest',
       {
         useESM: true,
+        tsconfig: './tsconfig.json',
+        compilerOptions: {
+          module: 'es2022',
+          target: 'es2022'
+        }
       },
     ],
   },

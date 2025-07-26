@@ -19,126 +19,133 @@ export interface AddOmniFocusTaskParams {
 /**
  * Generate pure AppleScript for task creation
  */
-function generateAppleScript(params: AddOmniFocusTaskParams): string {
-  // Sanitize and prepare parameters for AppleScript
-  const name = params.name.replace(/['"\\]/g, '\\$&'); // Escape quotes and backslashes
-  const note = params.note?.replace(/['"\\]/g, '\\$&') || '';
-  const dueDate = params.dueDate || '';
-  const deferDate = params.deferDate || '';
+export function generateAppleScript(params: AddOmniFocusTaskParams): string {
+  const esc = (s: string) => s.replace(/['"\\]/g, '\\\\$&');
 
-  // Helper to convert ISO date to an AppleScript-friendly string like "14 February 2024 12:00"
-  const formatDateForAppleScript = (iso: string) => {
-    const d = new Date(iso);
-    if (isNaN(d.getTime())) return '';
-    const months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
-    ];
-    const day = d.getDate();
-    const month = months[d.getMonth()];
-    const year = d.getFullYear();
-    const hours = d.getHours().toString().padStart(2, '0');
-    const minutes = d.getMinutes().toString().padStart(2, '0');
-    return `${day} ${month} ${year} ${hours}:${minutes}`;
-  };
-
-  const dueDateAS = dueDate ? formatDateForAppleScript(dueDate) : '';
-  const deferDateAS = deferDate ? formatDateForAppleScript(deferDate) : '';
+  const name = esc(params.name);
+  const note = params.note ? esc(params.note) : "";
+  const dueISO = params.dueDate ?? "";
+  const deferISO = params.deferDate ?? "";
   const flagged = params.flagged === true;
-  const estimatedMinutes = params.estimatedMinutes?.toString() || '';
-  const tags = params.tags || [];
-  const projectName = params.projectName?.replace(/['"\\]/g, '\\$&') || '';
-  const parentTaskId = params.parentTaskId?.replace(/['"\\]/g, '\\$&') || '';
-  const parentTaskName = params.parentTaskName?.replace(/['"\\]/g, '\\$&') || '';
-  
-  // Construct AppleScript with error handling
-  let script = `
+  const estimatedMinutes = Number.isFinite(params.estimatedMinutes as any) ? (params.estimatedMinutes as number) : 0;
+  const tags = (params.tags ?? []).map(esc);
+  const projectName = params.projectName ? esc(params.projectName) : "";
+  const parentTaskId = params.parentTaskId ? esc(params.parentTaskId) : "";
+  const parentTaskName = params.parentTaskName ? esc(params.parentTaskName) : "";
+  const tagsAS = `{${tags.map(t => `"${t}"`).join(', ')}}`;
+
+  return `
+use AppleScript version "2.8"
+use framework "Foundation"
+use scripting additions
+
+on parseISOISO8601(isoText)
+  set s to (isoText as text)
+  -- Try NSISO8601DateFormatter first (macOS 10.12+). If unavailable, fall back to NSDateFormatter.
   try
-    tell application "OmniFocus"
-      tell front document
-        -- Determine the container (parent task, project, or inbox)
-        if "${parentTaskId}" is not "" then
-          -- Use parent task by ID
-          try
-            set parentTask to first flattened task where id = "${parentTaskId}"
-            set newTask to make new task with properties {name:"${name}"} at end of tasks of parentTask
-          on error
-            return "{\\\"success\\\":false,\\\"error\\\":\\\"Parent task not found with ID: ${parentTaskId}\\\"}"
-          end try
-        else if "${parentTaskName}" is not "" then
-          -- Use parent task by name
-          try
-            set parentTask to first flattened task where name = "${parentTaskName}"
-            set newTask to make new task with properties {name:"${name}"} at end of tasks of parentTask
-          on error
-            return "{\\\"success\\\":false,\\\"error\\\":\\\"Parent task not found with name: ${parentTaskName}\\\"}"
-          end try
-        else if "${projectName}" is "" then
-          -- Use inbox of the document
-          set newTask to make new inbox task with properties {name:"${name}"}
-        else
-          -- Use specified project
-          try
-            set theProject to first flattened project where name = "${projectName}"
-            set newTask to make new task with properties {name:"${name}"} at end of tasks of theProject
-          on error
-            return "{\\\"success\\\":false,\\\"error\\\":\\\"Project not found: ${projectName}\\\"}"
-          end try
-        end if
-        
-        -- Set task properties
-        ${note ? `set note of newTask to "${note}"` : ''}
-        ${dueDate ? `
-          set due date of newTask to (current date) + (time to GMT)
-          set due date of newTask to date "${dueDate}"` : ''}
-        ${deferDate ? `
-          set defer date of newTask to (current date) + (time to GMT)
-          set defer date of newTask to date "${deferDate}"` : ''}
-        ${flagged ? `set flagged of newTask to true` : ''}
-        ${estimatedMinutes ? `set estimated minutes of newTask to ${estimatedMinutes}` : ''}
-        
-        -- Get the task ID
-        set taskId to id of newTask as string
-        
-        -- Add tags if provided
-        ${tags.length > 0 ? tags.map(tag => {
-          const sanitizedTag = tag.replace(/['"\\]/g, '\\$&');
-          return `
-          try
-            set theTag to first flattened tag where name = "${sanitizedTag}"
-            tell newTask to add theTag
-          on error
-            -- Ignore errors finding/adding tags
-          end try`;
-        }).join('\n') : ''}
-        
-        -- Return success with task ID
-        return "{\\\"success\\\":true,\\\"taskId\\\":\\"" & taskId & "\\",\\\"name\\\":\\"${name}\\"}"
-      end tell
-    end tell
-  on error errorMessage
-    return "{\\\"success\\\":false,\\\"error\\\":\\"" & errorMessage & "\\"}"
+    set fmt to current application's NSISO8601DateFormatter's new()
+    set opts to (current application's NSISO8601DateFormatWithInternetDateTime) + (current application's NSISO8601DateFormatWithFractionalSeconds)
+    fmt's setFormatOptions:opts
+    set nsdate to fmt's dateFromString:s
+    if nsdate is not missing value then return (nsdate as date)
   end try
-  `;
-  
-  return script;
+  set df to current application's NSDateFormatter's new()
+  df's setLocale:(current application's NSLocale's localeWithLocaleIdentifier:"en_US_POSIX")
+  df's setDateFormat:"yyyy-MM-dd HH:mm"
+  df's setTimeZone:(current application's NSTimeZone's systemTimeZone())
+  set nsdate2 to df's dateFromString:s
+  if nsdate2 is missing value then error "Invalid ISO date: " & s
+  return (nsdate2 as date)
+end parseISOISO8601
+
+-- Variables provided from Node
+set parentTaskId to "${parentTaskId}"
+set parentTaskName to "${parentTaskName}"
+set projectName to "${projectName}"
+set someName to "${name}"
+set someNote to "${note}"
+set dueDate to "${dueISO}"
+set deferDate to "${deferISO}"
+set flaggedTag to ${flagged ? 'true' : 'false'}
+set estimatedMinutes to ${estimatedMinutes}
+set tagsToSet to ${tagsAS}
+
+-- Script to create a task in OmniFocus
+try
+  tell application "OmniFocus"
+    tell front document
+      -- Determine the container (parent task, project, or inbox)
+      if parentTaskId is not "" then
+        try
+          set parentTask to first flattened task where id = parentTaskId
+          set newTask to make new task with properties {name:someName} at end of tasks of parentTask
+        on error
+          return "{\\\"success\\\":false,\\\"error\\\":\\\"Parent task not found with ID: " & parentTaskId & "\\\"}"
+        end try
+      else if parentTaskName is not "" then
+        try
+          set parentTask to first flattened task where name = parentTaskName
+          set newTask to make new task with properties {name:someName} at end of tasks of parentTask
+        on error
+          return "{\\\"success\\\":false,\\\"error\\\":\\\"Parent task not found with name: " & parentTaskName & "\\\"}"
+        end try
+      else if projectName is "" then
+        set newTask to make new inbox task with properties {name:someName}
+      else
+        try
+          set theProject to first flattened project where name = projectName
+          tell theProject
+            set newTask to make new task at end of tasks with properties {name:someName}
+          end tell
+        on error
+          return "{\\\"success\\\":false,\\\"error\\\":\\\"Project not found: " & projectName & "\\\"}"
+        end try
+      end if
+
+      if someNote is not "" then set note of newTask to someNote
+
+      if dueDate is not "" then set due date of newTask to my parseISOISO8601(dueDate)
+      if deferDate is not "" then set defer date of newTask to my parseISOISO8601(deferDate)
+
+      if flaggedTag then set flagged of newTask to true
+      if estimatedMinutes is not 0 then set estimated minutes of newTask to estimatedMinutes
+
+      set taskId to id of newTask as string
+
+      repeat with t in tagsToSet
+        try
+          set theTag to first flattened tag where name = t
+          tell newTask to add theTag to tags
+        end try
+      end repeat
+
+      return "{\\\"success\\\":true,\\\"taskId\\\":\\\"" & taskId & "\\\",\\\"name\\\":\\\"" & someName & "\\\"}"
+    end tell
+  end tell
+on error errorMessage
+  return "{\\\"success\\\":false,\\\"error\\\":\\\"" & errorMessage & "\\\"}"
+end try
+`.trim();
 }
 
 /**
  * Add a task to OmniFocus
  */
-export async function addOmniFocusTask(params: AddOmniFocusTaskParams): Promise<{success: boolean, taskId?: string, error?: string}> {
+export async function addOmniFocusTask(params: AddOmniFocusTaskParams): Promise<{ success: boolean, taskId?: string, error?: string }> {
   try {
     // Generate AppleScript
     const script = generateAppleScript(params);
-    
-    // Execute AppleScript directly
-    const { stdout, stderr } = await execAsync(`osascript -e '${script}'`);
-    
+
+    // Execute AppleScript directly (single -e). Escape single quotes for the shell.
+    const quoted = script.replace(/'/g, `'\\''`); // end-quote, escaped single quote, reopen
+    const { stdout, stderr } = await execAsync(
+      `osascript -l AppleScript -e '${quoted}'`
+    );
+
     // Parse the result
     try {
       const result = JSON.parse(stdout);
-      
+
       // Return the result
       return {
         success: result.success,
@@ -157,4 +164,4 @@ export async function addOmniFocusTask(params: AddOmniFocusTaskParams): Promise<
       error: error?.message || "Unknown error in addOmniFocusTask"
     };
   }
-} 
+}
