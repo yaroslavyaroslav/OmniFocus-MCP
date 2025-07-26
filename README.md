@@ -309,13 +309,13 @@ For a truly long‑running server where you can send *and* receive MCP messages 
 # Create the FIFOs (once):
 mkfifo /tmp/mcp.in /tmp/mcp.out
 
-# Launch the server reading from /tmp/mcp.in and writing to /tmp/mcp.out:
-node cli.cjs < /tmp/mcp.in > /tmp/mcp.out 2>&1 &
+# Start a persistent feed that re-opens the FIFO so the server doesn't see EOF:
+while true; do cat /tmp/mcp.in; done | node cli.cjs 2>&1 > /tmp/mcp.out &
 
-# In another shell, tail the server’s responses:
+# In another shell, tail the server’s responses live:
 tail -f /tmp/mcp.out &
 
-# In yet another shell, send requests:
+# In yet another shell, send function_call payloads:
 payload=…  # build your function_call JSON as before
 printf 'Content-Length: %d\r\n\r\n%s' "${#payload}" "$payload" > /tmp/mcp.in
 ```
@@ -324,13 +324,13 @@ printf 'Content-Length: %d\r\n\r\n%s' "${#payload}" "$payload" > /tmp/mcp.in
 # Create the FIFOs (once):
 mkfifo /tmp/mcp.in /tmp/mcp.out
 
-# Launch the server reading from /tmp/mcp.in and writing to /tmp/mcp.out:
-node cli.cjs < /tmp/mcp.in > /tmp/mcp.out 2>&1 &
+# Persistent feed loop (Fish):
+while true; cat /tmp/mcp.in; end | node cli.cjs 2>&1 > /tmp/mcp.out &
 
-# In another shell, tail the server’s responses:
+# Tail the server’s responses:
 tail -f /tmp/mcp.out &
 
-# Send requests (reuse $payload and $len):
+# Send function_call payloads:
 printf "Content-Length: %d\r\n\r\n%s" $len $payload > /tmp/mcp.in
 ```
 
