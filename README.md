@@ -301,38 +301,40 @@ printf "Content-Length: %d\r\n\r\n%s" $len $payload | node cli.cjs
 ```
 > **Note**: Make sure to include the correct MCP protocol framing (e.g. headers) if your client requires it. You can use tools like `jq -c` to compact and prepare the JSON payload.
 
-##### Long‑running server & named pipe (FIFO)
+##### Long‑running server via bi‑directional FIFOs
 
-To avoid re‑starting the server for each call, you can use a named pipe for stdin.
-
-##### Bash / Zsh
+For a truly long‑running server where you can send *and* receive MCP messages via files, use two named pipes (one for stdin, one for stdout). This captures the server’s responses in a separate pipe.
 
 ```bash
-# Create the FIFO (once):
-mkfifo /tmp/mcp.fifo
+# Create the FIFOs (once):
+mkfifo /tmp/mcp.in /tmp/mcp.out
 
-# Start the server, reading from the FIFO:
-node cli.cjs < /tmp/mcp.fifo &
+# Launch the server reading from /tmp/mcp.in and writing to /tmp/mcp.out:
+node cli.cjs < /tmp/mcp.in > /tmp/mcp.out &
 
-# In another shell, send calls by writing to the FIFO:
-payload=…  # as before
-printf 'Content-Length: %d\r\n\r\n%s' "${#payload}" "$payload" > /tmp/mcp.fifo
+# In another shell, tail the server’s responses:
+tail -f /tmp/mcp.out &
+
+# In yet another shell, send requests:
+payload=…  # build your function_call JSON as before
+printf 'Content-Length: %d\r\n\r\n%s' "${#payload}" "$payload" > /tmp/mcp.in
 ```
-
-##### Fish
 
 ```fish
-# Create the FIFO (once):
-mkfifo /tmp/mcp.fifo
+# Create the FIFOs (once):
+mkfifo /tmp/mcp.in /tmp/mcp.out
 
-# Start the server, reading from the FIFO:
-node cli.cjs < /tmp/mcp.fifo &
+# Launch the server reading from /tmp/mcp.in and writing to /tmp/mcp.out:
+node cli.cjs < /tmp/mcp.in > /tmp/mcp.out &
 
-# Send calls by writing to the FIFO (reuse $payload and $len from above):
-printf "Content-Length: %d\r\n\r\n%s" $len $payload > /tmp/mcp.fifo
+# In another shell, tail the server’s responses:
+tail -f /tmp/mcp.out &
+
+# Send requests (reuse $payload and $len):
+printf "Content-Length: %d\r\n\r\n%s" $len $payload > /tmp/mcp.in
 ```
 
-Each write to "/tmp/mcp.fifo" is streamed into the running server’s stdin.
+This setup lets you keep the server live and view each JSON‑RPC response in `/tmp/mcp.out` while issuing calls to `/tmp/mcp.in`.
 
 ##### Bash coprocess (bash‑only)
 
@@ -373,6 +375,20 @@ To use your local development version instead of the npm package:
 npm run build    # Build TypeScript and copy AppleScript files
 npm run dev      # Watch mode for TypeScript compilation
 npm start        # Run the built server
+
+### Debugging the server
+
+You can run the server under Node’s debugger or enable breakpoints at startup:
+
+```bash
+# Debug the CLI wrapper with the Inspector:
+node --inspect-brk cli.cjs
+
+# Or debug the compiled server directly:
+node --inspect-brk dist/server.js
+```
+
+After launching with `--inspect` or `--inspect-brk`, attach your editor or Chrome Inspector (`chrome://inspect`) to set breakpoints, step through code, and inspect variables.
 ```
 
 ### Architecture
