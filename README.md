@@ -240,6 +240,115 @@ npm start
 node cli.cjs
 ```
 
+#### Manual Testing via Terminal
+
+You can also send individual MCP function calls directly from the terminal to exercise the server without Claude. The server reads and writes MCP JSON messages on standard input/output. For example, to add a new task.
+
+##### Bash / Zsh
+
+```bash
+# In one terminal, start the server:
+node cli.cjs
+
+# In another terminal, send a function call payload:
+payload=$(jq -nc \
+  --arg name       "Buy bread" \
+  --arg dueDate    "2025-08-28 15:00" \
+  --arg project    "Home" \
+  --argjson tags   '["Me","1"]' \
+  '{type:"function_call",
+    name:"add_omnifocus_task",
+    arguments:{
+      name:$name,
+      dueDate:$dueDate,
+      projectName:$project,
+      tags:$tags
+    }
+  }')
+
+printf 'Content-Length: %d\r\n\r\n%s' \
+  "${#payload}" \
+  "$payload" \
+| node cli.cjs
+```
+
+##### Fish
+
+```fish
+# In one terminal, start the server:
+node cli.cjs
+
+# In another terminal, build the payload:
+set payload (jq -nc \
+  --arg name       "Buy bread" \
+  --arg dueDate    "2025-08-28 15:00" \
+  --arg project    "Home" \
+  --argjson tags   '["Me","1"]' \
+  '{type:"function_call",
+    name:"add_omnifocus_task",
+    arguments:{
+      name:$name,
+      dueDate:$dueDate,
+      projectName:$project,
+      tags:$tags
+    }
+  }')
+# Compute the byte length of the payload:
+set len (printf '%s' $payload | wc -c)
+
+# Use double quotes so fish expands the CR/LF escapes correctly:
+printf "Content-Length: %d\r\n\r\n%s" $len $payload | node cli.cjs
+```
+> **Note**: Make sure to include the correct MCP protocol framing (e.g. headers) if your client requires it. You can use tools like `jq -c` to compact and prepare the JSON payload.
+
+##### Long‑running server & named pipe (FIFO)
+
+To avoid re‑starting the server for each call, you can use a named pipe for stdin.
+
+##### Bash / Zsh
+
+```bash
+# Create the FIFO (once):
+mkfifo /tmp/mcp.fifo
+
+# Start the server, reading from the FIFO:
+node cli.cjs < /tmp/mcp.fifo &
+
+# In another shell, send calls by writing to the FIFO:
+payload=…  # as before
+printf 'Content-Length: %d\r\n\r\n%s' "${#payload}" "$payload" > /tmp/mcp.fifo
+```
+
+##### Fish
+
+```fish
+# Create the FIFO (once):
+mkfifo /tmp/mcp.fifo
+
+# Start the server, reading from the FIFO:
+node cli.cjs < /tmp/mcp.fifo &
+
+# Send calls by writing to the FIFO (reuse $payload and $len from above):
+printf "Content-Length: %d\r\n\r\n%s" $len $payload > /tmp/mcp.fifo
+```
+
+Each write to "/tmp/mcp.fifo" is streamed into the running server’s stdin.
+
+##### Bash coprocess (bash‑only)
+
+Bash’s `coproc` can also manage a long‑running stdin/stdout server:
+
+```bash
+coproc MCP_SERVER { node cli.cjs; }
+
+# Send a framed payload:
+printf 'Content-Length: %d\r\n\r\n%s' "${#payload}" "$payload" >&"${MCP_SERVER[1]}"
+
+# Read the response:
+read -r RESPONSE <&"${MCP_SERVER[0]}"
+echo "Server response: $RESPONSE"
+```
+
 ### Using Your Local Version in Claude Desktop
 
 To use your local development version instead of the npm package:
