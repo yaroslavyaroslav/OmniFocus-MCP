@@ -25,6 +25,25 @@ function generateAppleScript(params: AddOmniFocusTaskParams): string {
   const note = params.note?.replace(/['"\\]/g, '\\$&') || '';
   const dueDate = params.dueDate || '';
   const deferDate = params.deferDate || '';
+
+  // Helper to convert ISO date to an AppleScript-friendly string like "14 February 2024 12:00"
+  const formatDateForAppleScript = (iso: string) => {
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    const months = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    const day = d.getDate();
+    const month = months[d.getMonth()];
+    const year = d.getFullYear();
+    const hours = d.getHours().toString().padStart(2, '0');
+    const minutes = d.getMinutes().toString().padStart(2, '0');
+    return `${day} ${month} ${year} ${hours}:${minutes}`;
+  };
+
+  const dueDateAS = dueDate ? formatDateForAppleScript(dueDate) : '';
+  const deferDateAS = deferDate ? formatDateForAppleScript(deferDate) : '';
   const flagged = params.flagged === true;
   const estimatedMinutes = params.estimatedMinutes?.toString() || '';
   const tags = params.tags || [];
