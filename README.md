@@ -310,7 +310,7 @@ For a truly long‑running server where you can send *and* receive MCP messages 
 mkfifo /tmp/mcp.in /tmp/mcp.out
 
 # Launch the server reading from /tmp/mcp.in and writing to /tmp/mcp.out:
-node cli.cjs < /tmp/mcp.in > /tmp/mcp.out &
+node cli.cjs < /tmp/mcp.in > /tmp/mcp.out 2>&1 &
 
 # In another shell, tail the server’s responses:
 tail -f /tmp/mcp.out &
@@ -325,7 +325,7 @@ printf 'Content-Length: %d\r\n\r\n%s' "${#payload}" "$payload" > /tmp/mcp.in
 mkfifo /tmp/mcp.in /tmp/mcp.out
 
 # Launch the server reading from /tmp/mcp.in and writing to /tmp/mcp.out:
-node cli.cjs < /tmp/mcp.in > /tmp/mcp.out &
+node cli.cjs < /tmp/mcp.in > /tmp/mcp.out 2>&1 &
 
 # In another shell, tail the server’s responses:
 tail -f /tmp/mcp.out &
