@@ -217,150 +217,6 @@ Parameters:
   - `name`: (Optional) The name of the item to remove
   - `itemType`: The type of item ('task' or 'project')
 
-## 🛠 Development
-
-### Local Development Setup
-
-1. Clone the repository:
-```bash
-git clone https://github.com/themotionmachine/omnifocus-mcp-server.git
-cd omnifocus-mcp-server
-```
-
-2. Install dependencies and build:
-```bash
-npm install
-npm run build
-```
-
-3. Run the server locally:
-```bash
-npm start
-# Or use the CLI wrapper:
-node cli.cjs
-```
-
-#### Manual Testing via Terminal
-
-You can also send individual MCP function calls directly from the terminal to exercise the server without Claude. The server reads and writes MCP JSON messages on standard input/output. For example, to add a new task.
-
-##### Bash / Zsh
-
-```bash
-# In one terminal, start the server:
-node cli.cjs
-
-# In another terminal, send a function call payload:
-payload=$(jq -nc \
-  --arg name       "Buy bread" \
-  --arg dueDate    "2025-08-28 15:00" \
-  --arg project    "Home" \
-  --argjson tags   '["Me","1"]' \
-  '{type:"function_call",
-    name:"add_omnifocus_task",
-    arguments:{
-      name:$name,
-      dueDate:$dueDate,
-      projectName:$project,
-      tags:$tags
-    }
-  }')
-
-printf 'Content-Length: %d\r\n\r\n%s' \
-  "${#payload}" \
-  "$payload" \
-| node cli.cjs
-```
-
-##### Fish
-
-```fish
-# In one terminal, start the server:
-node cli.cjs
-
-# In another terminal, build the payload:
-set payload (jq -nc \
-  --arg name       "Buy bread" \
-  --arg dueDate    "2025-08-28 15:00" \
-  --arg project    "Home" \
-  --argjson tags   '["Me","1"]' \
-  '{type:"function_call",
-    name:"add_omnifocus_task",
-    arguments:{
-      name:$name,
-      dueDate:$dueDate,
-      projectName:$project,
-      tags:$tags
-    }
-  }')
-# Compute the byte length of the payload:
-set len (printf '%s' $payload | wc -c)
-
-# Use double quotes so fish expands the CR/LF escapes correctly:
-printf "Content-Length: %d\r\n\r\n%s" $len $payload | node cli.cjs
-```
-> **Note**: Make sure to include the correct MCP protocol framing (e.g. headers) if your client requires it. You can use tools like `jq -c` to compact and prepare the JSON payload.
-
-##### Long‑running server via bi‑directional FIFOs
-
-For a truly long‑running server where you can send *and* receive MCP messages via files, use two named pipes (one for stdin, one for stdout). This captures the server’s responses in a separate pipe.
-
-```bash
-# Create the FIFOs (once):
-mkfifo /tmp/mcp.in /tmp/mcp.out
-
-# Start a persistent feed that re-opens the FIFO so the server doesn't see EOF:
-while true; do cat /tmp/mcp.in; done | node cli.cjs 2>&1 > /tmp/mcp.out &
-
-## Shell-based test: initialize + function calls
-
-# In one shell, tail the server’s responses:
-tail -f /tmp/mcp.out &
-
-# In another shell, send the MCP initialize handshake to start a session:
-init='{"type":"initialize","arguments":{}}'
-printf 'Content-Length: %d\r\n\r\n%s' "${#init}" "$init" > /tmp/mcp.in
-
-# Now send your function_call payloads:
-payload=…  # build your function_call JSON as before
-printf 'Content-Length: %d\r\n\r\n%s' "${#payload}" "$payload" > /tmp/mcp.in
-```
-
-```fish
-# Create the FIFOs (once):
-mkfifo /tmp/mcp.in /tmp/mcp.out
-
-# Persistent feed loop (Fish):
-while true; cat /tmp/mcp.in; end | node cli.cjs 2>&1 > /tmp/mcp.out &
-
-# Tail the server’s responses live:
-tail -f /tmp/mcp.out &
-
-# Send the MCP initialize handshake:
-set init (printf '%s' '{"type":"initialize","arguments":{}}')
-printf "Content-Length: %d\r\n\r\n%s" (string length -- $init) $init > /tmp/mcp.in
-
-# Then send your function_call payloads:
-printf "Content-Length: %d\r\n\r\n%s" $len $payload > /tmp/mcp.in
-```
-
-This setup lets you keep the server live and view each JSON‑RPC response in `/tmp/mcp.out` while issuing calls to `/tmp/mcp.in`.
-
-##### Bash coprocess (bash‑only)
-
-Bash’s `coproc` can also manage a long‑running stdin/stdout server:
-
-```bash
-coproc MCP_SERVER { node cli.cjs; }
-
-# Send a framed payload:
-printf 'Content-Length: %d\r\n\r\n%s' "${#payload}" "$payload" >&"${MCP_SERVER[1]}"
-
-# Read the response:
-read -r RESPONSE <&"${MCP_SERVER[0]}"
-echo "Server response: $RESPONSE"
-```
-
 ### Using Your Local Version in Claude Desktop
 
 To use your local development version instead of the npm package:
@@ -370,14 +226,28 @@ To use your local development version instead of the npm package:
 {
   "mcpServers": {
     "omnifocus": {
-      "command": "node",
-      "args": ["/absolute/path/to/omnifocus-mcp-server/cli.cjs"]
+      "command": "npx",
+      "args": ["-y", "omnifocus-mcp"]
     }
   }
 }
 ```
 
 2. Restart Claude Desktop to use your local version
+
+### Using Your Local Version in Codex CLI
+
+If you are working inside the terminal with the **Codex CLI** you can point it to this local server as well.  Add the following section to your Codex configuration file (typically `~/.codex/config.toml`).  The schema mirrors the one Claude Desktop uses—only the file format (TOML instead of JSON) changes.
+
+```toml
+# ~/.codex/config.toml
+
+[mcp_servers.omnifocus]
+command = "npx"
+args = ["-y", "omnifocus-mcp"]
+```
+
+After saving the file, restart any running Codex CLI session so it reloads the new configuration.  You should then see OmniFocus tools (e.g. `dump_database`, `add_omnifocus_task`, etc.) available when you ask Codex for the list of tools.
 
 ### Development Commands
 
